@@ -1,5 +1,6 @@
-// services/edge.service.js
 const neo4j = require('./neo4j');
+const { int } = require('./neo4j');
+// const { read, write, int } = require('./neo4j'); // 从neo4j.js导入所需函数
 const { v4: uuidv4 } = require('uuid'); // 用于生成唯一ID
 
 /**
@@ -21,7 +22,12 @@ class EdgeService {
         LIMIT $limit
       `;
 
-            const params = { skip: neo4j.int(skip), limit: neo4j.int(limit) };
+            // const params = { skip, limit };
+            // 确保参数是整数
+            const params = {
+                skip: int(parseInt(skip)),
+                limit: int(parseInt(limit))
+            };
             const result = await neo4j.read(query, params);
 
             return result.records.map(record => {
@@ -83,7 +89,12 @@ class EdgeService {
         LIMIT $limit
       `;
 
-            const params = { skip: neo4j.int(skip), limit: neo4j.int(limit) };
+            // const params = { skip, limit };
+            // 确保参数是整数
+            const params = {
+                skip: int(parseInt(skip)),
+                limit: int(parseInt(limit))
+            };
             const result = await neo4j.read(query, params);
 
             return result.records.map(record => {
@@ -229,11 +240,18 @@ class EdgeService {
         LIMIT $limit
       `;
 
+            // const params = {
+            //     nodeId,
+            //     skip,
+            //     limit
+            // };
+            // 确保参数是整数
             const params = {
                 nodeId,
-                skip: neo4j.int(skip),
-                limit: neo4j.int(limit)
+                skip: int(parseInt(skip)),
+                limit: int(parseInt(limit))
             };
+
 
             const result = await neo4j.read(query, params);
 

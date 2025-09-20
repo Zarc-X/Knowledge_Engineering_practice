@@ -80,8 +80,29 @@ initDriver();
 
 // 导出功能
 module.exports = {
-    getDriver,
-    closeDriver,
-    read,
-    write
+    getDriver: () => driver,
+    closeDriver: async () => {
+        if (driver) {
+            await driver.close();
+            console.log('Neo4j连接已关闭');
+        }
+    },
+    read: async (query, params = {}) => {
+        const session = driver.session({ defaultAccessMode: neo4j.session.READ });
+        try {
+            return await session.run(query, params);
+        } finally {
+            await session.close();
+        }
+    },
+    write: async (query, params = {}) => {
+        const session = driver.session({ defaultAccessMode: neo4j.session.WRITE });
+        try {
+            return await session.run(query, params);
+        } finally {
+            await session.close();
+        }
+    },
+    int: neo4j.int, // 导出neo4j.int函数
+    isInt: neo4j.isInt // 导出neo4j.isInt函数
 };
