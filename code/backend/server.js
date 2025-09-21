@@ -4,10 +4,16 @@ const cors = require('cors');
 const routes = require('./routes'); // 导入所有路由
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 1895;
 
 // 中间件
-app.use(cors()); // 允许前端4200端口访问后端3000端口
+// app.use(cors()); // 允许前端4200端口访问后端3000端口
+// 更详细的CORS配置
+app.use(cors({
+    origin: 'http://localhost:8000', // 您的前端地址
+    credentials: true,
+    optionsSuccessStatus: 200
+}));
 app.use(express.json()); // 解析JSON请求体
 
 // 路由
