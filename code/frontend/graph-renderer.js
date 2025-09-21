@@ -63,20 +63,27 @@ class GraphRenderer {
     render(data) {
         if (!this.graph) return;
 
+        // 确保节点有正确的ID和标签
         const nodes = data.nodes.map(node => ({
             id: node.id,
-            label: node.properties.name || `节点 ${node.id.substr(0, 8)}`,
-            properties: node.properties,
-            labels: node.labels
+            label: node.properties && node.properties.name
+                ? node.properties.name
+                : `节点 ${node.id ? node.id.substr(0, 8) : '未知'}`,
+            properties: node.properties || {},
+            labels: node.labels || []
         }));
 
+        // 确保边有正确的源和目标
         const edges = data.edges.map(edge => ({
             id: edge.id,
-            source: edge.startNode.id,
-            target: edge.endNode.id,
-            label: edge.type,
-            properties: edge.properties
+            source: edge.startNode ? edge.startNode.id : edge.startNodeId,
+            target: edge.endNode ? edge.endNode.id : edge.endNodeId,
+            label: edge.type || '关系',
+            properties: edge.properties || {}
         }));
+
+        console.log("渲染节点:", nodes);
+        console.log("渲染边:", edges);
 
         this.graph.data({
             nodes,
@@ -90,7 +97,6 @@ class GraphRenderer {
         this.graph.on('node:click', (evt) => {
             const node = evt.item;
             const nodeId = node.get('model').id;
-            // 触发自定义事件或直接处理
             document.dispatchEvent(new CustomEvent('nodeClick', { detail: nodeId }));
         });
 

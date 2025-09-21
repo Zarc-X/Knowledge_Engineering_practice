@@ -5,19 +5,31 @@ class ApiService {
 
     async request(endpoint, options = {}) {
         const url = `${this.baseUrl}${endpoint}`;
-        const response = await fetch(url, {
-            headers: {
-                'Content-Type': 'application/json',
-                ...options.headers
-            },
-            ...options
-        });
 
-        if (!response.ok) {
-            throw new Error(`API请求失败: ${response.status} ${response.statusText}`);
+        try {
+            // 确保请求体是JSON字符串
+            if (options.body && typeof options.body !== 'string') {
+                options.body = JSON.stringify(options.body);
+            }
+
+            const response = await fetch(url, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...options.headers
+                },
+                ...options
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`API请求失败: ${response.status} ${response.statusText} - ${errorText}`);
+            }
+
+            return response.json();
+        } catch (error) {
+            console.error('API请求错误:', error);
+            throw error;
         }
-
-        return response.json();
     }
 
     // 节点相关API
@@ -29,15 +41,33 @@ class ApiService {
     }
 
     async getNode(id) {
-        return this.request(`/nodes/${id}`);
+        try {
+            console.log("请求节点详情，ID:", id);
+            const response = await this.request(`/nodes/${id}`);
+            console.log("节点详情响应:", response);
+            return response;
+        } catch (error) {
+            console.error("获取节点详情API错误:", error);
+            throw error;
+        }
     }
 
+    // 修改创建节点方法
     async createNode(nodeData) {
+        // 确保数据格式正确
+        const requestData = {
+            properties: nodeData.properties || {},
+            labels: nodeData.labels || []
+        };
+
+        console.log("创建节点请求数据:", requestData);
+
         return this.request('/nodes', {
             method: 'POST',
-            body: JSON.stringify(nodeData)
+            body: JSON.stringify(requestData)
         });
     }
+
 
     async updateNode(id, nodeData) {
         return this.request(`/nodes/${id}`, {
@@ -61,13 +91,32 @@ class ApiService {
     }
 
     async getEdge(id) {
-        return this.request(`/edges/${id}`);
+        try {
+            console.log("请求关系详情，ID:", id);
+            const response = await this.request(`/edges/${id}`);
+            console.log("关系详情响应:", response);
+            return response;
+        } catch (error) {
+            console.error("获取关系详情API错误:", error);
+            throw error;
+        }
     }
 
+    // 修改创建关系方法
     async createEdge(edgeData) {
+        // 确保数据格式正确
+        const requestData = {
+            startNodeId: edgeData.startNodeId,
+            endNodeId: edgeData.endNodeId,
+            type: edgeData.type,
+            properties: edgeData.properties || {}
+        };
+
+        console.log("创建关系请求数据:", requestData);
+
         return this.request('/edges', {
             method: 'POST',
-            body: JSON.stringify(edgeData)
+            body: JSON.stringify(requestData)
         });
     }
 
