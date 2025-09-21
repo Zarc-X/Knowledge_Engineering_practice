@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>知识图谱管理系统</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- 引入AntV G6 -->
+    <script src="https://unpkg.com/@antv/g6@4.8.20/dist/g6.min.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>知识图谱管理系统</h1>
+            <div class="controls">
+                <button id="refresh-btn">刷新数据</button>
+                <button id="add-node-btn">添加节点</button>
+                <button id="add-edge-btn">添加关系</button>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="search-box">
+                    <input type="text" id="search-input" placeholder="搜索节点或关系...">
+                    <button id="search-btn">搜索</button>
+                </div>
+
+                <div class="node-list">
+                    <h3>节点列表</h3>
+                    <ul id="nodes-container"></ul>
+                </div>
+
+                <div class="edge-list">
+                    <h3>关系列表</h3>
+                    <ul id="edges-container"></ul>
+                </div>
+            </div>
+
+            <div class="graph-container">
+                <div id="graph"></div>
+            </div>
+        </div>
+
+        <!-- 模态框 -->
+        <div id="modal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <div id="modal-body"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="api-service.js"></script>
+    <script src="graph-renderer.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>

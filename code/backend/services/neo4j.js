@@ -20,7 +20,8 @@ function initDriver() {
         return driver;
     } catch (error) {
         console.error('Neo4j驱动初始化失败:', error);
-        throw error;
+        process.exit(1); // 退出进程
+        // throw error;
     }
 }
 
