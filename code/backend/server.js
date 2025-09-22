@@ -4,7 +4,19 @@ const cors = require('cors');
 const routes = require('./routes'); // 导入所有路由
 
 const app = express();
-const PORT = process.env.PORT || 1895;
+const PORT = process.env.PORT || 3000;
+
+// 根据环境配置CORS
+const corsOptions = {
+    origin: process.env.NODE_ENV === 'production'
+        ? process.env.FRONTEND_URL
+        : 'http://localhost:8000',
+    credentials: true,
+    optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
+app.use(express.json());
 
 // 中间件
 // app.use(cors()); // 允许前端4200端口访问后端3000端口

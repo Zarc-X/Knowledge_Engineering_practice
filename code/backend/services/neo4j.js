@@ -1,10 +1,17 @@
-// services/neo4j.js
 const neo4j = require('neo4j-driver');
+require('dotenv').config(); // 确保加载环境变量
+
 
 // 数据库连接配置 - 使用默认的本地Neo4j设置
-const URI = process.env.NEO4J_URI || 'bolt://localhost:7687';
-const USER = process.env.NEO4J_USER || 'neo4j';
-const PASSWORD = process.env.NEO4J_PASSWORD || 'password'; // 请更改为你的实际密码
+const URI = process.env.NEO4J_URI;
+const USER = process.env.NEO4J_USER;
+const PASSWORD = process.env.NEO4J_PASSWORD;
+
+// 验证必要的环境变量
+if (!URI || !USER || !PASSWORD) {
+    console.error('缺少必要的数据库连接环境变量');
+    process.exit(1);
+}
 
 // 创建驱动实例
 let driver;
