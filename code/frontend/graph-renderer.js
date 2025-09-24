@@ -143,10 +143,10 @@ class GraphRenderer {
 document.addEventListener('nodeClick', (e) => {
     // 在实际应用中，这里可以调用应用实例的方法
     console.log('节点被点击:', e.detail);
-    // 例如: app.showNodeDetail(e.detail);
+    app.showNodeDetail(e.detail);
 });
 
 document.addEventListener('edgeClick', (e) => {
     console.log('边被点击:', e.detail);
-    // 例如: app.showEdgeDetail(e.detail);
+    app.showEdgeDetail(e.detail);
 });
