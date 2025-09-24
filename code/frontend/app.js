@@ -8,6 +8,12 @@ class KnowledgeGraphApp {
             edges: []
         };
 
+        // 添加配置项
+        this.config = {
+            maxNodes: 10000, // 默认最大显示50个节点
+            maxEdges: 10000 // 可选：也可以控制最大关系数
+        };
+
         this.init();
         console.log("KnowledgeGraphApp 初始化完成");
     }
@@ -69,6 +75,17 @@ class KnowledgeGraphApp {
             this.hideModal();
         });
 
+        // 添加调试控件事件绑定
+        bindEventWhenReady('#debug-apply-limit', 'click', () => {
+            const limitInput = document.getElementById('debug-node-limit');
+            const maxNodes = parseInt(limitInput.value);
+            if (!isNaN(maxNodes) && maxNodes > 0) {
+                this.config.maxNodes = maxNodes;
+                console.log(`手动设置最大节点数为: ${maxNodes}`);
+                this.loadData();
+            }
+        });
+
         // 点击模态框外部关闭
         window.addEventListener('click', (event) => {
             const modal = document.getElementById('modal');
@@ -83,23 +100,47 @@ class KnowledgeGraphApp {
     async loadData() {
         try {
             console.log("开始加载数据...");
+            console.log("请求参数 - maxNodes:", this.config.maxNodes, "maxEdges:", this.config.maxEdges);
 
-            // 同时获取节点和关系
+            // 使用配置的最大节点数
             const [nodesResponse, edgesResponse] = await Promise.all([
-                this.api.getNodes(),
-                this.api.getEdges()
+                this.api.getNodes(this.config.maxNodes),
+                this.api.getEdges(this.config.maxEdges)
             ]);
 
-            console.log("节点响应:", nodesResponse);
-            console.log("关系响应:", edgesResponse);
+            // 检查响应结构
+            console.log("节点响应结构:", nodesResponse);
+            console.log("关系响应结构:", edgesResponse);
+
+            console.log("节点响应数据量:", nodesResponse.data ? nodesResponse.data.length : 0);
+            console.log("关系响应数据量:", edgesResponse.data ? edgesResponse.data.length : 0);
 
             // 确保数据存在
             this.currentData.nodes = nodesResponse.data || [];
             this.currentData.edges = edgesResponse.data || [];
 
-            // 打印所有节点ID以供调试
-            console.log("所有节点ID:", this.currentData.nodes.map(n => n.id));
-            console.log("所有关系ID:", this.currentData.edges.map(e => e.id));
+            // 诊断信息
+            console.log("=== 数据诊断 ===");
+            console.log("配置限制 - 节点:", this.config.maxNodes, "边:", this.config.maxEdges);
+            console.log("实际获取 - 节点:", this.currentData.nodes.length, "边:", this.currentData.edges.length);
+
+            if (this.currentData.nodes.length === this.config.maxNodes) {
+                console.log("✅ 节点数量达到限制，后端限制生效");
+            } else {
+                console.log("⚠️ 节点数量未达到限制，可能原因:");
+                console.log("   - 数据库中没有足够节点");
+                console.log("   - 后端服务未正确处理limit参数");
+                console.log("   - 网络请求参数错误");
+            }
+
+            // 如果返回的节点数超过限制，进行截断
+            if (this.currentData.nodes.length > this.config.maxNodes) {
+                console.warn(`节点数量超过限制，显示前 ${this.config.maxNodes} 个节点`);
+                this.currentData.nodes = this.currentData.nodes.slice(0, this.config.maxNodes);
+            }
+
+            console.log("最终显示节点数量:", this.currentData.nodes.length);
+            console.log("最终显示关系数量:", this.currentData.edges.length);
 
             this.renderSidebarLists();
             this.graphRenderer.render(this.currentData);
@@ -111,11 +152,21 @@ class KnowledgeGraphApp {
         }
     }
 
+    // 添加设置最大节点数的方法
+    setMaxNodes(maxNodes) {
+        if (maxNodes > 0 && maxNodes <= 1000) { // 设置合理范围
+            this.config.maxNodes = maxNodes;
+            console.log(`设置最大节点数为: ${maxNodes}`);
+            this.loadData(); // 重新加载数据
+        } else {
+            alert('最大节点数必须在1-1000之间');
+        }
+    }
+
     debugInfo() {
         console.log("=== 调试信息开始 ===");
-        console.log("当前数据:", this.currentData);
-        console.log("节点数量:", this.currentData.nodes.length);
-        console.log("关系数量:", this.currentData.edges.length);
+        console.log("当前配置:", this.config);
+        console.log("最大节点数:", this.config.maxNodes);
 
         // 检查API服务状态
         console.log("API基础URL:", this.api.baseUrl);
@@ -157,15 +208,28 @@ class KnowledgeGraphApp {
         return id && typeof id === 'string' && id.length > 0;
     }
 
-    // 修改 renderSidebarLists 方法中的节点点击处理
     renderSidebarLists() {
-        // 渲染节点列表
         const nodesContainer = document.getElementById('nodes-container');
-        nodesContainer.innerHTML = '';
+        const edgesContainer = document.getElementById('edges-container');
 
+        // 清空容器
+        nodesContainer.innerHTML = '';
+        edgesContainer.innerHTML = '';
+
+        // 添加统计信息
+        const statsHtml = `
+        <div style="background: #f0f0f0; padding: 8px; margin-bottom: 10px; border-radius: 4px;">
+            <strong>统计信息:</strong><br>
+            节点: ${this.currentData.nodes.length}/${this.config.maxNodes}<br>
+            关系: ${this.currentData.edges.length}/${this.config.maxEdges}
+        </div>
+    `;
+
+        nodesContainer.innerHTML = statsHtml;
+
+        // 渲染节点列表
         this.currentData.nodes.forEach(node => {
             const li = document.createElement('li');
-            // 使用更安全的显示方式
             const displayName = node.properties && node.properties.name
                 ? node.properties.name
                 : `节点 ${node.id ? node.id.substring(0, 8) : '未知'}`;
@@ -180,9 +244,6 @@ class KnowledgeGraphApp {
         });
 
         // 渲染关系列表
-        const edgesContainer = document.getElementById('edges-container');
-        edgesContainer.innerHTML = '';
-
         this.currentData.edges.forEach(edge => {
             const li = document.createElement('li');
             const startName = edge.startNode && edge.startNode.properties && edge.startNode.properties.name

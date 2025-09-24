@@ -8,26 +8,34 @@ const { v4: uuidv4 } = require('uuid'); // 用于生成唯一ID
  */
 class NodeService {
     /**
-     * 获取所有节点（带分页）
-     * @param {number} limit - 每页数量
+     * 获取所有节点（带极高上限）
+     * @param {number} limit - 每页数量（前端控制）
      * @param {number} skip - 跳过数量
      * @returns {Promise<Array>} 节点列表
      */
-    async getAllNodes(limit = 100, skip = 0) {
+    async getAllNodes(limit = 10000, skip = 0) {
         try {
-            const query = `
-        MATCH (n)
-        RETURN n
-        SKIP $skip
-        LIMIT $limit
-      `;
+            // 强制使用传入的参数，不使用默认值
+            const actualLimit = limit;
+            const actualSkip = skip;
 
-            // const params = { skip, limit };
-            // 确保参数是整数
+            // 设置安全上限
+            const safeLimit = Math.min(actualLimit, 10000);
+
+            const query = `
+            MATCH (n)
+            RETURN n
+            SKIP $skip
+            LIMIT $limit
+        `;
+
             const params = {
-                skip: int(parseInt(skip)),
-                limit: int(parseInt(limit))
+                skip: int(parseInt(actualSkip)),
+                limit: int(parseInt(safeLimit))
             };
+
+            console.log(`节点服务: skip=${actualSkip}, limit=${safeLimit} (传入limit=${limit})`);
+
             const result = await neo4j.read(query, params);
 
             return result.records.map(record => {
@@ -74,7 +82,7 @@ class NodeService {
      * @param {number} skip - 跳过数量
      * @returns {Promise<Array>} 节点列表
      */
-    async getNodesByLabel(label, limit = 100, skip = 0) {
+    async getNodesByLabel(label, limit = 10000, skip = 0) {
         try {
             const query = `
         MATCH (n:${label})
@@ -198,7 +206,7 @@ class NodeService {
      * @param {number} skip - 跳过数量
      * @returns {Promise<Array>} 匹配的节点列表
      */
-    async searchNodes(key, value, limit = 100, skip = 0) {
+    async searchNodes(key, value, limit = 10000, skip = 0) {
         try {
             const query = `
         MATCH (n)

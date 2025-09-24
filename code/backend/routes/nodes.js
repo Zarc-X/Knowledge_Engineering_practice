@@ -11,10 +11,13 @@ const nodeService = require('../services/node.service');
 router.get('/', async (req, res) => {
     try {
         const {
-            limit = 100,
+            limit = 10000,  // 修改默认值为10000
             skip = 0,
             label
         } = req.query;
+
+        // 添加调试日志
+        console.log(`节点路由接收参数: limit=${limit}, skip=${skip}, label=${label}`);
 
         let nodes;
 
@@ -36,7 +39,12 @@ router.get('/', async (req, res) => {
         res.json({
             success: true,
             count: nodes.length,
-            data: nodes
+            data: nodes,
+            meta: {
+                limit: parseInt(limit),
+                skip: parseInt(skip),
+                total: nodes.length
+            }
         });
     } catch (error) {
         console.error('获取节点列表失败:', error);
@@ -195,7 +203,7 @@ router.delete('/:id', async (req, res) => {
 router.get('/search/:key/:value', async (req, res) => {
     try {
         const { key, value } = req.params;
-        const { limit = 100, skip = 0 } = req.query;
+        const { limit = 10000, skip = 0 } = req.query;  // 修改默认值
 
         const nodes = await nodeService.searchNodes(
             key,
@@ -227,7 +235,7 @@ router.get('/search/:key/:value', async (req, res) => {
 router.get('/label/:label', async (req, res) => {
     try {
         const { label } = req.params;
-        const { limit = 100, skip = 0 } = req.query;
+        const { limit = 10000, skip = 0 } = req.query;  // 修改默认值
 
         const nodes = await nodeService.getNodesByLabel(
             label,

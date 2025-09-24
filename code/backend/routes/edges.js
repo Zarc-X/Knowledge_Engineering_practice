@@ -11,10 +11,13 @@ const edgeService = require('../services/edge.service');
 router.get('/', async (req, res) => {
     try {
         const {
-            limit = 100,
+            limit = 10000,  // 修改默认值为10000
             skip = 0,
             type
         } = req.query;
+
+        // 添加调试日志
+        console.log(`边路由接收参数: limit=${limit}, skip=${skip}, type=${type}`);
 
         let edges;
 
@@ -36,7 +39,12 @@ router.get('/', async (req, res) => {
         res.json({
             success: true,
             count: edges.length,
-            data: edges
+            data: edges,
+            meta: {
+                limit: parseInt(limit),
+                skip: parseInt(skip),
+                total: edges.length
+            }
         });
     } catch (error) {
         console.error('获取关系列表失败:', error);
@@ -200,7 +208,7 @@ router.delete('/:id', async (req, res) => {
 router.get('/type/:type', async (req, res) => {
     try {
         const { type } = req.params;
-        const { limit = 100, skip = 0 } = req.query;
+        const { limit = 10000, skip = 0 } = req.query;  // 修改默认值
 
         const edges = await edgeService.getEdgesByType(
             type,
@@ -233,7 +241,7 @@ router.get('/node/:nodeId', async (req, res) => {
         const { nodeId } = req.params;
         const {
             direction = 'both',
-            limit = 100,
+            limit = 10000,  // 修改默认值
             skip = 0
         } = req.query;
 

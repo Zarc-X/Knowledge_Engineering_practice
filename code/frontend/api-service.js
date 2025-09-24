@@ -3,6 +3,7 @@ class ApiService {
         this.baseUrl = 'http://localhost:3000/api';
     }
 
+
     async request(endpoint, options = {}) {
         const url = `${this.baseUrl}${endpoint}`;
 
@@ -32,10 +33,16 @@ class ApiService {
         }
     }
 
-    // 节点相关API
-    async getNodes(limit = 100, skip = 0, label = null) {
-        const params = new URLSearchParams({ limit, skip });
+    // 节点相关API - 修复参数传递
+    async getNodes(limit = 10000, skip = 0, label = null) {
+        const params = new URLSearchParams({
+            limit: limit.toString(),
+            skip: skip.toString()
+        });
         if (label) params.append('label', label);
+
+        console.log("API请求节点，参数:", { limit, skip, label });
+        console.log("请求URL:", `/nodes?${params}`);
 
         return this.request(`/nodes?${params}`);
     }
@@ -82,13 +89,20 @@ class ApiService {
         });
     }
 
-    // 关系相关API
-    async getEdges(limit = 100, skip = 0, type = null) {
-        const params = new URLSearchParams({ limit, skip });
+    // 关系相关API - 修复参数传递
+    async getEdges(limit = 10000, skip = 0, type = null) {
+        const params = new URLSearchParams({
+            limit: limit.toString(),
+            skip: skip.toString()
+        });
         if (type) params.append('type', type);
+
+        console.log("API请求关系，参数:", { limit, skip, type });
+        console.log("请求URL:", `/edges?${params}`);
 
         return this.request(`/edges?${params}`);
     }
+
 
     async getEdge(id) {
         try {
@@ -134,12 +148,12 @@ class ApiService {
     }
 
     // 搜索功能
-    async searchNodes(key, value, limit = 100, skip = 0) {
+    async searchNodes(key, value, limit = 10000, skip = 0) {
         const params = new URLSearchParams({ limit, skip });
         return this.request(`/nodes/search/${key}/${value}?${params}`);
     }
 
-    async getNodeEdges(nodeId, direction = 'both', limit = 100, skip = 0) {
+    async getNodeEdges(nodeId, direction = 'both', limit = 10000, skip = 0) {
         const params = new URLSearchParams({ direction, limit, skip });
         return this.request(`/edges/node/${nodeId}?${params}`);
     }

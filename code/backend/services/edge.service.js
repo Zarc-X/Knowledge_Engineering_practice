@@ -13,21 +13,35 @@ class EdgeService {
      * @param {number} skip - 跳过数量
      * @returns {Promise<Array>} 关系列表
      */
-    async getAllEdges(limit = 100, skip = 0) {
+    /**
+     * 获取所有关系（带极高上限）
+     * @param {number} limit - 每页数量（前端控制）
+     * @param {number} skip - 跳过数量
+     * @returns {Promise<Array>} 关系列表
+     */
+    async getAllEdges(limit = 10000, skip = 0) {
         try {
-            const query = `
-        MATCH ()-[r]->()
-        RETURN r, startNode(r) as start, endNode(r) as end
-        SKIP $skip
-        LIMIT $limit
-      `;
+            // 强制使用传入的参数
+            const actualLimit = limit;
+            const actualSkip = skip;
 
-            // const params = { skip, limit };
-            // 确保参数是整数
+            // 设置安全上限
+            const safeLimit = Math.min(actualLimit, 10000);
+
+            const query = `
+            MATCH ()-[r]->()
+            RETURN r, startNode(r) as start, endNode(r) as end
+            SKIP $skip
+            LIMIT $limit
+        `;
+
             const params = {
-                skip: int(parseInt(skip)),
-                limit: int(parseInt(limit))
+                skip: int(parseInt(actualSkip)),
+                limit: int(parseInt(safeLimit))
             };
+
+            console.log(`边服务: skip=${actualSkip}, limit=${safeLimit} (传入limit=${limit})`);
+
             const result = await neo4j.read(query, params);
 
             return result.records.map(record => {
@@ -80,7 +94,7 @@ class EdgeService {
      * @param {number} skip - 跳过数量
      * @returns {Promise<Array>} 关系列表
      */
-    async getEdgesByType(type, limit = 100, skip = 0) {
+    async getEdgesByType(type, limit = 10000, skip = 0) {
         try {
             const query = `
         MATCH ()-[r:${type}]->()
@@ -217,7 +231,7 @@ class EdgeService {
      * @param {number} skip - 跳过数量
      * @returns {Promise<Array>} 关系列表
      */
-    async getNodeEdges(nodeId, direction = 'both', limit = 100, skip = 0) {
+    async getNodeEdges(nodeId, direction = 'both', limit = 10000, skip = 0) {
         try {
             let pattern;
 
