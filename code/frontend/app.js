@@ -14,6 +14,9 @@ class KnowledgeGraphApp {
             maxEdges: 10000 // 可选：也可以控制最大关系数
         };
 
+        // 设置 GraphRenderer 的应用实例引用
+        this.graphRenderer.setAppInstance(this);
+
         this.init();
         console.log("KnowledgeGraphApp 初始化完成");
     }
@@ -698,10 +701,10 @@ class KnowledgeGraphApp {
 
 // 初始化应用
 document.addEventListener('DOMContentLoaded', () => {
-    new KnowledgeGraphApp();
+    const app = new KnowledgeGraphApp();
+    window.app = app; // 设置为全局变量
 });
 
-// 在文件末尾添加
 // 全局错误处理
 window.addEventListener('error', function (e) {
     console.error('全局错误:', e.error);

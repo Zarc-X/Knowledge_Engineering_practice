@@ -2,7 +2,13 @@ class GraphRenderer {
     constructor(containerId) {
         this.containerId = containerId;
         this.graph = null;
+        this.app = null; // 添加应用实例引用
         this.init();
+    }
+
+    // 设置应用实例的方法
+    setAppInstance(app) {
+        this.app = app;
     }
 
     init() {
@@ -93,18 +99,42 @@ class GraphRenderer {
         this.graph.render();
         this.graph.fitView();
 
-        // 添加节点点击事件
+        // 绑定点击事件
+        this.bindGraphEvents();
+    }
+
+    bindGraphEvents() {
+        // 移除旧的事件监听器
+        this.graph.off('node:click');
+        this.graph.off('edge:click');
+
+        // 绑定新的事件
         this.graph.on('node:click', (evt) => {
             const node = evt.item;
             const nodeId = node.get('model').id;
-            document.dispatchEvent(new CustomEvent('nodeClick', { detail: nodeId }));
+            console.log('节点被点击:', nodeId);
+
+            if (this.app && this.app.showNodeDetail) {
+                this.app.showNodeDetail(nodeId);
+            } else {
+                console.error('应用实例未找到或showNodeDetail方法不存在');
+                // 备用方案：使用全局事件
+                document.dispatchEvent(new CustomEvent('nodeClick', { detail: nodeId }));
+            }
         });
 
-        // 添加边点击事件
         this.graph.on('edge:click', (evt) => {
             const edge = evt.item;
             const edgeId = edge.get('model').id;
-            document.dispatchEvent(new CustomEvent('edgeClick', { detail: edgeId }));
+            console.log('边被点击:', edgeId);
+
+            if (this.app && this.app.showEdgeDetail) {
+                this.app.showEdgeDetail(edgeId);
+            } else {
+                console.error('应用实例未找到或showEdgeDetail方法不存在');
+                // 备用方案：使用全局事件
+                document.dispatchEvent(new CustomEvent('edgeClick', { detail: edgeId }));
+            }
         });
     }
 
@@ -139,14 +169,33 @@ class GraphRenderer {
     }
 }
 
-// 监听节点和边点击事件
+// // 监听节点和边点击事件
+// document.addEventListener('nodeClick', (e) => {
+//     // 在实际应用中，这里可以调用应用实例的方法
+//     console.log('节点被点击:', e.detail);
+//     // 例如: app.showNodeDetail(e.detail);
+// });
+
+// document.addEventListener('edgeClick', (e) => {
+//     console.log('边被点击:', e.detail);
+//     // 例如: app.showEdgeDetail(e.detail);
+// });
+
+// 备用方案：通过全局事件处理
 document.addEventListener('nodeClick', (e) => {
-    // 在实际应用中，这里可以调用应用实例的方法
-    console.log('节点被点击:', e.detail);
-    // 例如: app.showNodeDetail(e.detail);
+    console.log('通过全局事件处理节点点击:', e.detail);
+    if (window.app && window.app.showNodeDetail) {
+        window.app.showNodeDetail(e.detail);
+    } else {
+        console.warn('无法处理节点点击事件：应用实例未找到');
+    }
 });
 
 document.addEventListener('edgeClick', (e) => {
-    console.log('边被点击:', e.detail);
-    // 例如: app.showEdgeDetail(e.detail);
+    console.log('通过全局事件处理边点击:', e.detail);
+    if (window.app && window.app.showEdgeDetail) {
+        window.app.showEdgeDetail(e.detail);
+    } else {
+        console.warn('无法处理边点击事件：应用实例未找到');
+    }
 });
