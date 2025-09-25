@@ -380,19 +380,26 @@ class KnowledgeGraphApp {
 
             properties.name = name; // 确保名称属性
 
+            let result;
             if (existingNode) {
                 console.log("更新节点:", existingNode.id, properties);
-                await this.api.updateNode(existingNode.id, properties);
+                result = await this.api.updateNode(existingNode.id, properties);
             } else {
                 console.log("创建节点:", properties, labels);
-                await this.api.createNode({ properties, labels });
+                result = await this.api.createNode({ properties, labels });
             }
 
-            this.hideModal();
-            this.loadData(); // 刷新数据
+            // 检查API响应是否成功
+            if (result && result.success) {
+                this.showSuccessMessage(existingNode ? '节点更新成功！' : '节点创建成功！');
+                this.hideModal();
+                this.loadData(); // 刷新数据
+            } else {
+                throw new Error(result?.message || '操作失败，请检查服务器响应');
+            }
         } catch (error) {
             console.error('保存节点失败:', error);
-            alert('保存节点失败: ' + error.message);
+            this.showErrorMessage('保存节点失败: ' + error.message);
         }
     }
 
@@ -439,6 +446,51 @@ class KnowledgeGraphApp {
         });
     }
 
+    // 显示成功消息
+    showSuccessMessage(message) {
+        this.showMessage(message, 'success');
+    }
+
+    // 显示错误消息
+    showErrorMessage(message) {
+        this.showMessage(message, 'error');
+    }
+
+    // 显示消息（支持成功和错误类型）
+    showMessage(message, type = 'info') {
+        // 移除已存在的消息框
+        const existingMessage = document.getElementById('operation-message');
+        if (existingMessage) {
+            existingMessage.remove();
+        }
+
+        // 创建消息元素
+        const messageDiv = document.createElement('div');
+        messageDiv.id = 'operation-message';
+        messageDiv.className = `message ${type}`;
+        messageDiv.innerHTML = `
+        <span>${message}</span>
+        <button id="close-message-btn">&times;</button>
+    `;
+
+        // 添加到页面
+        document.body.appendChild(messageDiv);
+
+        // 添加关闭按钮事件
+        document.getElementById('close-message-btn').addEventListener('click', () => {
+            messageDiv.remove();
+        });
+
+        // 3秒后自动消失（仅对成功消息）
+        if (type === 'success') {
+            setTimeout(() => {
+                if (messageDiv.parentNode) {
+                    messageDiv.remove();
+                }
+            }, 3000);
+        }
+    }
+
     async saveEdge(existingEdge) {
         try {
             const startNodeId = document.getElementById('edge-start').value;
@@ -454,19 +506,26 @@ class KnowledgeGraphApp {
                 throw new Error('属性JSON格式不正确');
             }
 
+            let result;
             if (existingEdge) {
                 console.log("更新关系:", existingEdge.id, properties);
-                await this.api.updateEdge(existingEdge.id, properties);
+                result = await this.api.updateEdge(existingEdge.id, properties);
             } else {
                 console.log("创建关系:", startNodeId, endNodeId, type, properties);
-                await this.api.createEdge({ startNodeId, endNodeId, type, properties });
+                result = await this.api.createEdge({ startNodeId, endNodeId, type, properties });
             }
 
-            this.hideModal();
-            this.loadData(); // 刷新数据
+            // 检查API响应是否成功
+            if (result && result.success) {
+                this.showSuccessMessage(existingEdge ? '关系更新成功！' : '关系创建成功！');
+                this.hideModal();
+                this.loadData(); // 刷新数据
+            } else {
+                throw new Error(result?.message || '操作失败，请检查服务器响应');
+            }
         } catch (error) {
             console.error('保存关系失败:', error);
-            alert('保存关系失败: ' + error.message);
+            this.showErrorMessage('保存关系失败: ' + error.message);
         }
     }
 

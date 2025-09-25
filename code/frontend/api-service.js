@@ -4,6 +4,7 @@ class ApiService {
     }
 
 
+    // 在 api-service.js 的 request 方法中添加响应格式检查
     async request(endpoint, options = {}) {
         const url = `${this.baseUrl}${endpoint}`;
 
@@ -26,7 +27,18 @@ class ApiService {
                 throw new Error(`API请求失败: ${response.status} ${response.statusText} - ${errorText}`);
             }
 
-            return response.json();
+            const result = await response.json();
+
+            // 检查响应格式（可选）
+            if (result && typeof result.success !== 'undefined') {
+                return result;
+            } else {
+                // 如果API没有返回success字段，包装一下
+                return {
+                    success: true,
+                    data: result
+                };
+            }
         } catch (error) {
             console.error('API请求错误:', error);
             throw error;
