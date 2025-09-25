@@ -75,13 +75,24 @@ class KnowledgeGraphApp {
             this.hideModal();
         });
 
-        // 添加调试控件事件绑定
+        // 添加节点数控制事件绑定
         bindEventWhenReady('#debug-apply-limit', 'click', () => {
             const limitInput = document.getElementById('debug-node-limit');
             const maxNodes = parseInt(limitInput.value);
             if (!isNaN(maxNodes) && maxNodes > 0) {
                 this.config.maxNodes = maxNodes;
                 console.log(`手动设置最大节点数为: ${maxNodes}`);
+                this.loadData();
+            }
+        });
+
+        // 添加边数控制事件绑定 - 添加这行代码
+        bindEventWhenReady('#debug-apply-edge-limit', 'click', () => {
+            const limitInput = document.getElementById('debug-edge-limit');
+            const maxEdges = parseInt(limitInput.value);
+            if (!isNaN(maxEdges) && maxEdges > 0) {
+                this.config.maxEdges = maxEdges;
+                console.log(`手动设置最大边数为: ${maxEdges}`);
                 this.loadData();
             }
         });
@@ -139,6 +150,12 @@ class KnowledgeGraphApp {
                 this.currentData.nodes = this.currentData.nodes.slice(0, this.config.maxNodes);
             }
 
+            // 如果返回的边数超过限制，进行截断 - 添加这行代码
+            if (this.currentData.edges.length > this.config.maxEdges) {
+                console.warn(`边数量超过限制，显示前 ${this.config.maxEdges} 条边`);
+                this.currentData.edges = this.currentData.edges.slice(0, this.config.maxEdges);
+            }
+
             console.log("最终显示节点数量:", this.currentData.nodes.length);
             console.log("最终显示关系数量:", this.currentData.edges.length);
 
@@ -154,12 +171,23 @@ class KnowledgeGraphApp {
 
     // 添加设置最大节点数的方法
     setMaxNodes(maxNodes) {
-        if (maxNodes > 0 && maxNodes <= 1000) { // 设置合理范围
+        if (maxNodes > 0 && maxNodes <= 10000) { // 设置合理范围
             this.config.maxNodes = maxNodes;
             console.log(`设置最大节点数为: ${maxNodes}`);
             this.loadData(); // 重新加载数据
         } else {
-            alert('最大节点数必须在1-1000之间');
+            alert('最大节点数必须在1-10000之间');
+        }
+    }
+
+    // 添加设置最大边数的方法
+    setMaxEdges(maxEdges) {
+        if (maxEdges > 0 && maxEdges <= 10000) {
+            this.config.maxEdges = maxEdges;
+            console.log(`设置最大边数为: ${maxEdges}`);
+            this.loadData();
+        } else {
+            alert('最大边数必须在1-10000之间');
         }
     }
 
@@ -167,24 +195,38 @@ class KnowledgeGraphApp {
         console.log("=== 调试信息开始 ===");
         console.log("当前配置:", this.config);
         console.log("最大节点数:", this.config.maxNodes);
+        console.log("最大边数:", this.config.maxEdges);
 
         // 检查API服务状态
         console.log("API基础URL:", this.api.baseUrl);
 
-        // 测试API连接 - 使用更简单的方式
+        // 测试API连接
         console.log("测试API连接...");
 
         // 直接测试API端点
         fetch(`${this.api.baseUrl}/nodes?limit=1`)
             .then(response => {
-                console.log("API响应状态:", response.status, response.statusText);
+                console.log("API节点响应状态:", response.status, response.statusText);
                 return response.json();
             })
             .then(data => {
-                console.log("API测试成功:", data);
+                console.log("API节点测试成功:", data);
             })
             .catch(error => {
-                console.error("API测试失败:", error);
+                console.error("API节点测试失败:", error);
+            });
+
+        // 测试边API端点
+        fetch(`${this.api.baseUrl}/edges?limit=1`)
+            .then(response => {
+                console.log("API边响应状态:", response.status, response.statusText);
+                return response.json();
+            })
+            .then(data => {
+                console.log("API边测试成功:", data);
+            })
+            .catch(error => {
+                console.error("API边测试失败:", error);
             });
 
         // 检查图谱渲染器状态
@@ -192,7 +234,7 @@ class KnowledgeGraphApp {
         console.log("图谱实例:", this.graphRenderer.graph ? "已初始化" : "未初始化");
 
         // 检查所有按钮状态
-        const buttons = ['refresh-btn', 'add-node-btn', 'add-edge-btn', 'debug-btn', 'search-btn'];
+        const buttons = ['refresh-btn', 'add-node-btn', 'add-edge-btn', 'debug-btn', 'search-btn', 'debug-apply-limit', 'debug-apply-edge-limit'];
         buttons.forEach(btnId => {
             const btn = document.getElementById(btnId);
             console.log(`按钮 ${btnId}:`, btn ? "存在" : "不存在");

@@ -20,10 +20,18 @@
                 <button id="add-node-btn">添加节点</button>
                 <button id="add-edge-btn">添加关系</button>
 
-                <!-- 添加调试控件 -->
+                <!-- 节点数控制 -->
                 <div style="display: inline-block; margin-left: 10px;">
-                    <input type="number" id="debug-node-limit" value="800" style="width: 60px;">
-                    <button id="debug-apply-limit">应用节点限制</button>
+                    <span style="color: white; margin-right: 5px;">节点:</span>
+                    <input type="number" id="debug-node-limit" value="256" style="width: 60px;">
+                    <button id="debug-apply-limit">应用</button>
+                </div>
+
+                <!-- 边数控制 -->
+                <div style="display: inline-block; margin-left: 10px;">
+                    <span style="color: white; margin-right: 5px;">边:</span>
+                    <input type="number" id="debug-edge-limit" value="256" style="width: 60px;">
+                    <button id="debug-apply-edge-limit">应用</button>
                 </div>
 
                 <button id="debug-btn">调试</button>
