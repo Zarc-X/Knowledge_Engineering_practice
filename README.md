@@ -1,4 +1,4 @@
-# 知识图谱后端服务
+# 知识图谱管理系统
 
 ## 环境要求
     jdk 11
@@ -19,7 +19,7 @@
 1. 确保neo4j处于停机状态
 2. 在neo4j/bin目录下运行如下命令
 
-        neo4j-admin load --from="C:\Users\Zarc\Downloads\data\neo4j.dump" --database=neo4j --force
+        neo4j-admin load --from="<dumo文件路径>" --database=neo4j --force
 
 ## 启动服务
 1. 在neo4j的/bin目录运行

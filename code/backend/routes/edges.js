@@ -1,4 +1,3 @@
-// routes/edges.js
 const express = require('express');
 const router = express.Router();
 const edgeService = require('../services/edge.service');
@@ -11,25 +10,22 @@ const edgeService = require('../services/edge.service');
 router.get('/', async (req, res) => {
     try {
         const {
-            limit = 10000,  // 修改默认值为10000
+            limit = 10000,
             skip = 0,
             type
         } = req.query;
 
-        // 添加调试日志
         console.log(`边路由接收参数: limit=${limit}, skip=${skip}, type=${type}`);
 
         let edges;
 
         if (type) {
-            // 如果提供了类型参数，按类型过滤
             edges = await edgeService.getEdgesByType(
                 type,
                 parseInt(limit),
                 parseInt(skip)
             );
         } else {
-            // 否则获取所有关系
             edges = await edgeService.getAllEdges(
                 parseInt(limit),
                 parseInt(skip)
@@ -96,7 +92,6 @@ router.post('/', async (req, res) => {
     try {
         const { startNodeId, endNodeId, type, properties } = req.body;
 
-        // 验证必要参数
         if (!startNodeId || !endNodeId || !type) {
             return res.status(400).json({
                 success: false,
@@ -136,7 +131,6 @@ router.put('/:id', async (req, res) => {
         const { id } = req.params;
         const { properties } = req.body;
 
-        // 验证必要参数
         if (!properties) {
             return res.status(400).json({
                 success: false,
@@ -208,7 +202,7 @@ router.delete('/:id', async (req, res) => {
 router.get('/type/:type', async (req, res) => {
     try {
         const { type } = req.params;
-        const { limit = 10000, skip = 0 } = req.query;  // 修改默认值
+        const { limit = 10000, skip = 0 } = req.query;
 
         const edges = await edgeService.getEdgesByType(
             type,
@@ -241,11 +235,10 @@ router.get('/node/:nodeId', async (req, res) => {
         const { nodeId } = req.params;
         const {
             direction = 'both',
-            limit = 10000,  // 修改默认值
+            limit = 10000,
             skip = 0
         } = req.query;
 
-        // 验证方向参数
         const validDirections = ['incoming', 'outgoing', 'both'];
         if (!validDirections.includes(direction)) {
             return res.status(400).json({

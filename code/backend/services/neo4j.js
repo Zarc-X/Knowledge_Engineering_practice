@@ -2,18 +2,15 @@ const neo4j = require('neo4j-driver');
 require('dotenv').config(); // 确保加载环境变量
 
 
-// 数据库连接配置 - 使用默认的本地Neo4j设置
 const URI = process.env.NEO4J_URI;
 const USER = process.env.NEO4J_USER;
 const PASSWORD = process.env.NEO4J_PASSWORD;
 
-// 验证必要的环境变量
 if (!URI || !USER || !PASSWORD) {
     console.error('缺少必要的数据库连接环境变量');
     process.exit(1);
 }
 
-// 创建驱动实例
 let driver;
 
 /**
@@ -28,7 +25,6 @@ function initDriver() {
     } catch (error) {
         console.error('Neo4j驱动初始化失败:', error);
         process.exit(1); // 退出进程
-        // throw error;
     }
 }
 
@@ -83,10 +79,8 @@ async function write(query, params = {}) {
     }
 }
 
-// 初始化驱动
 initDriver();
 
-// 导出功能
 module.exports = {
     getDriver: () => driver,
     closeDriver: async () => {
@@ -111,6 +105,6 @@ module.exports = {
             await session.close();
         }
     },
-    int: neo4j.int, // 导出neo4j.int函数
-    isInt: neo4j.isInt // 导出neo4j.isInt函数
+    int: neo4j.int,
+    isInt: neo4j.isInt
 };

@@ -17,6 +17,7 @@ class GraphRenderer {
         const height = container.clientHeight || 600;
 
         this.graph = new G6.Graph({
+            // G6 画布配置
             container: this.containerId,
             width,
             height,
@@ -56,7 +57,6 @@ class GraphRenderer {
             }
         });
 
-        // 调整画布大小
         window.addEventListener('resize', () => {
             if (!this.graph || this.graph.get('destroyed')) return;
             const container = document.getElementById(this.containerId);
@@ -66,10 +66,10 @@ class GraphRenderer {
         });
     }
 
+    //将数据转换为G6格式并渲染
     render(data) {
         if (!this.graph) return;
 
-        // 确保节点有正确的ID和标签
         const nodes = data.nodes.map(node => ({
             id: node.id,
             label: node.properties && node.properties.name
@@ -79,7 +79,6 @@ class GraphRenderer {
             labels: node.labels || []
         }));
 
-        // 确保边有正确的源和目标
         const edges = data.edges.map(edge => ({
             id: edge.id,
             source: edge.startNode ? edge.startNode.id : edge.startNodeId,
@@ -99,16 +98,16 @@ class GraphRenderer {
         this.graph.render();
         this.graph.fitView();
 
-        // 绑定点击事件
         this.bindGraphEvents();
     }
 
+    // …………………
+
+    // 事件绑定
     bindGraphEvents() {
-        // 移除旧的事件监听器
         this.graph.off('node:click');
         this.graph.off('edge:click');
 
-        // 绑定新的事件
         this.graph.on('node:click', (evt) => {
             const node = evt.item;
             const nodeId = node.get('model').id;
@@ -118,30 +117,30 @@ class GraphRenderer {
                 this.app.showNodeDetail(nodeId);
             } else {
                 console.error('应用实例未找到或showNodeDetail方法不存在');
-                // 备用方案：使用全局事件
                 document.dispatchEvent(new CustomEvent('nodeClick', { detail: nodeId }));
             }
         });
 
         this.graph.on('edge:click', (evt) => {
             const edge = evt.item;
-            const edgeId = edge.get('model').id;
-            console.log('边被点击:', edgeId);
+            const edgeModel = edge.get('model');
+            const edgeId = edgeModel.id;
+            console.log('边被点击 - 模型数据:', edgeModel);
+            console.log('边被点击 - ID:', edgeId);
 
             if (this.app && this.app.showEdgeDetail) {
                 this.app.showEdgeDetail(edgeId);
             } else {
                 console.error('应用实例未找到或showEdgeDetail方法不存在');
-                // 备用方案：使用全局事件
                 document.dispatchEvent(new CustomEvent('edgeClick', { detail: edgeId }));
             }
         });
     }
 
+    // 高亮节点
     highlightNodes(nodeIds) {
         if (!this.graph) return;
 
-        // 先将所有节点恢复默认样式
         this.graph.getNodes().forEach(node => {
             this.graph.updateItem(node, {
                 style: {
@@ -151,7 +150,6 @@ class GraphRenderer {
             });
         });
 
-        // 高亮选中的节点
         nodeIds.forEach(nodeId => {
             const node = this.graph.findById(nodeId);
             if (node) {
@@ -164,24 +162,18 @@ class GraphRenderer {
             }
         });
 
-        // 聚焦到选中的节点
         this.graph.focusItem(nodeIds[0]);
     }
 }
 
-// // 监听节点和边点击事件
 // document.addEventListener('nodeClick', (e) => {
-//     // 在实际应用中，这里可以调用应用实例的方法
 //     console.log('节点被点击:', e.detail);
-//     // 例如: app.showNodeDetail(e.detail);
 // });
 
 // document.addEventListener('edgeClick', (e) => {
 //     console.log('边被点击:', e.detail);
-//     // 例如: app.showEdgeDetail(e.detail);
 // });
 
-// 备用方案：通过全局事件处理
 document.addEventListener('nodeClick', (e) => {
     console.log('通过全局事件处理节点点击:', e.detail);
     if (window.app && window.app.showNodeDetail) {

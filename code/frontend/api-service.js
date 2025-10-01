@@ -4,12 +4,10 @@ class ApiService {
     }
 
 
-    // 在 api-service.js 的 request 方法中添加响应格式检查
     async request(endpoint, options = {}) {
         const url = `${this.baseUrl}${endpoint}`;
 
         try {
-            // 确保请求体是JSON字符串
             if (options.body && typeof options.body !== 'string') {
                 options.body = JSON.stringify(options.body);
             }
@@ -29,11 +27,9 @@ class ApiService {
 
             const result = await response.json();
 
-            // 检查响应格式（可选）
             if (result && typeof result.success !== 'undefined') {
                 return result;
             } else {
-                // 如果API没有返回success字段，包装一下
                 return {
                     success: true,
                     data: result
@@ -45,7 +41,7 @@ class ApiService {
         }
     }
 
-    // 节点相关API - 修复参数传递
+    // 节点相关API
     async getNodes(limit = 10000, skip = 0, label = null) {
         const params = new URLSearchParams({
             limit: limit.toString(),
@@ -71,9 +67,7 @@ class ApiService {
         }
     }
 
-    // 修改创建节点方法
     async createNode(nodeData) {
-        // 确保数据格式正确
         const requestData = {
             properties: nodeData.properties || {},
             labels: nodeData.labels || []
@@ -101,7 +95,7 @@ class ApiService {
         });
     }
 
-    // 关系相关API - 修复参数传递
+    // 关系相关API
     async getEdges(limit = 10000, skip = 0, type = null) {
         const params = new URLSearchParams({
             limit: limit.toString(),
@@ -128,9 +122,7 @@ class ApiService {
         }
     }
 
-    // 修改创建关系方法
     async createEdge(edgeData) {
-        // 确保数据格式正确
         const requestData = {
             startNodeId: edgeData.startNodeId,
             endNodeId: edgeData.endNodeId,
@@ -159,7 +151,6 @@ class ApiService {
         });
     }
 
-    // 搜索功能
     async searchNodes(key, value, limit = 10000, skip = 0) {
         const params = new URLSearchParams({ limit, skip });
         return this.request(`/nodes/search/${key}/${value}?${params}`);

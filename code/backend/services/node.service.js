@@ -15,11 +15,9 @@ class NodeService {
      */
     async getAllNodes(limit = 10000, skip = 0) {
         try {
-            // 强制使用传入的参数，不使用默认值
             const actualLimit = limit;
             const actualSkip = skip;
 
-            // 设置安全上限
             const safeLimit = Math.min(actualLimit, 10000);
 
             const query = `
@@ -91,7 +89,6 @@ class NodeService {
         LIMIT $limit
       `;
 
-            // const params = { skip, limit };
             // 确保参数是整数
             const params = {
                 skip: int(parseInt(skip)),
@@ -117,11 +114,9 @@ class NodeService {
      */
     async createNode(properties, labels = []) {
         try {
-            // 生成唯一ID
             const id = uuidv4();
             const nodeProperties = { ...properties, id };
 
-            // 构建标签部分
             const labelString = labels.length > 0
                 ? `:${labels.join(':')}`
                 : '';
@@ -182,22 +177,33 @@ class NodeService {
      */
     async deleteNode(id) {
         try {
+            console.log(`删除节点服务: ID=${id}, 类型=${typeof id}`);
+
+            // 使用与 getNodeById 相同的查询逻辑
             const query = `
-        MATCH (n {id: $id})
-        DETACH DELETE n
-      `;
+            MATCH (n)
+            WHERE n.id = $id OR ID(n) = $neo4jId
+            DETACH DELETE n
+        `;
 
-            const params = { id };
+            const params = {
+                id: id,
+                neo4jId: int(parseInt(id)) // 同时尝试作为Neo4j内部ID
+            };
+
+            console.log('删除节点参数:', params);
+
             const result = await neo4j.write(query, params);
+            const deletedCount = result.summary.counters.updates().nodesDeleted;
 
-            // 检查是否有节点被删除
-            return result.summary.counters.updates().nodesDeleted > 0;
+            console.log(`删除节点结果: 删除了 ${deletedCount} 个节点`);
+
+            return deletedCount > 0;
         } catch (error) {
             console.error('删除节点失败:', error);
             throw error;
         }
     }
-
     /**
      * 搜索节点（根据属性值）
      * @param {string} key - 属性键
@@ -216,11 +222,6 @@ class NodeService {
         LIMIT $limit
       `;
 
-            // const params = {
-            //     value,
-            //     skip,
-            //     limit
-            // };
             // 确保参数是整数
             const params = {
                 value,
@@ -250,11 +251,9 @@ class NodeService {
             id: node.properties.id || node.identity.toString(),
             labels: node.labels,
             properties: node.properties,
-            // 如果需要，可以添加Neo4j内部ID
             neo4jId: node.identity.toString()
         };
     }
 }
 
-// 导出单例实例
 module.exports = new NodeService();

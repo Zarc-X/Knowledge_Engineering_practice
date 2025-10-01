@@ -8,13 +8,11 @@ class KnowledgeGraphApp {
             edges: []
         };
 
-        // 添加配置项
         this.config = {
-            maxNodes: 10000, // 默认最大显示50个节点
-            maxEdges: 10000 // 可选：也可以控制最大关系数
+            maxNodes: 10000,
+            maxEdges: 10000
         };
 
-        // 设置 GraphRenderer 的应用实例引用
         this.graphRenderer.setAppInstance(this);
 
         this.init();
@@ -78,7 +76,7 @@ class KnowledgeGraphApp {
             this.hideModal();
         });
 
-        // 添加节点数控制事件绑定
+        // 节点数控制事件
         bindEventWhenReady('#debug-apply-limit', 'click', () => {
             const limitInput = document.getElementById('debug-node-limit');
             const maxNodes = parseInt(limitInput.value);
@@ -89,7 +87,7 @@ class KnowledgeGraphApp {
             }
         });
 
-        // 添加边数控制事件绑定 - 添加这行代码
+        // 边数控制事件
         bindEventWhenReady('#debug-apply-edge-limit', 'click', () => {
             const limitInput = document.getElementById('debug-edge-limit');
             const maxEdges = parseInt(limitInput.value);
@@ -111,29 +109,30 @@ class KnowledgeGraphApp {
         console.log("所有事件绑定完成");
     }
 
+
+    /*     
+     * 数据管理
+     */
+    // 加载所有数据
     async loadData() {
         try {
             console.log("开始加载数据...");
             console.log("请求参数 - maxNodes:", this.config.maxNodes, "maxEdges:", this.config.maxEdges);
 
-            // 使用配置的最大节点数
             const [nodesResponse, edgesResponse] = await Promise.all([
                 this.api.getNodes(this.config.maxNodes),
                 this.api.getEdges(this.config.maxEdges)
             ]);
 
-            // 检查响应结构
             console.log("节点响应结构:", nodesResponse);
             console.log("关系响应结构:", edgesResponse);
 
             console.log("节点响应数据量:", nodesResponse.data ? nodesResponse.data.length : 0);
             console.log("关系响应数据量:", edgesResponse.data ? edgesResponse.data.length : 0);
 
-            // 确保数据存在
             this.currentData.nodes = nodesResponse.data || [];
             this.currentData.edges = edgesResponse.data || [];
 
-            // 诊断信息
             console.log("=== 数据诊断 ===");
             console.log("配置限制 - 节点:", this.config.maxNodes, "边:", this.config.maxEdges);
             console.log("实际获取 - 节点:", this.currentData.nodes.length, "边:", this.currentData.edges.length);
@@ -153,7 +152,7 @@ class KnowledgeGraphApp {
                 this.currentData.nodes = this.currentData.nodes.slice(0, this.config.maxNodes);
             }
 
-            // 如果返回的边数超过限制，进行截断 - 添加这行代码
+            // 如果返回的边数超过限制，进行截断
             if (this.currentData.edges.length > this.config.maxEdges) {
                 console.warn(`边数量超过限制，显示前 ${this.config.maxEdges} 条边`);
                 this.currentData.edges = this.currentData.edges.slice(0, this.config.maxEdges);
@@ -172,18 +171,18 @@ class KnowledgeGraphApp {
         }
     }
 
-    // 添加设置最大节点数的方法
+    // 设置最大节点数
     setMaxNodes(maxNodes) {
-        if (maxNodes > 0 && maxNodes <= 10000) { // 设置合理范围
+        if (maxNodes > 0 && maxNodes <= 10000) {
             this.config.maxNodes = maxNodes;
             console.log(`设置最大节点数为: ${maxNodes}`);
-            this.loadData(); // 重新加载数据
+            this.loadData();
         } else {
             alert('最大节点数必须在1-10000之间');
         }
     }
 
-    // 添加设置最大边数的方法
+    // 设置最大边数
     setMaxEdges(maxEdges) {
         if (maxEdges > 0 && maxEdges <= 10000) {
             this.config.maxEdges = maxEdges;
@@ -194,140 +193,12 @@ class KnowledgeGraphApp {
         }
     }
 
-    debugInfo() {
-        console.log("=== 调试信息开始 ===");
-        console.log("当前配置:", this.config);
-        console.log("最大节点数:", this.config.maxNodes);
-        console.log("最大边数:", this.config.maxEdges);
 
-        // 检查API服务状态
-        console.log("API基础URL:", this.api.baseUrl);
-
-        // 测试API连接
-        console.log("测试API连接...");
-
-        // 直接测试API端点
-        fetch(`${this.api.baseUrl}/nodes?limit=1`)
-            .then(response => {
-                console.log("API节点响应状态:", response.status, response.statusText);
-                return response.json();
-            })
-            .then(data => {
-                console.log("API节点测试成功:", data);
-            })
-            .catch(error => {
-                console.error("API节点测试失败:", error);
-            });
-
-        // 测试边API端点
-        fetch(`${this.api.baseUrl}/edges?limit=1`)
-            .then(response => {
-                console.log("API边响应状态:", response.status, response.statusText);
-                return response.json();
-            })
-            .then(data => {
-                console.log("API边测试成功:", data);
-            })
-            .catch(error => {
-                console.error("API边测试失败:", error);
-            });
-
-        // 检查图谱渲染器状态
-        console.log("图谱容器:", this.graphRenderer.containerId);
-        console.log("图谱实例:", this.graphRenderer.graph ? "已初始化" : "未初始化");
-
-        // 检查所有按钮状态
-        const buttons = ['refresh-btn', 'add-node-btn', 'add-edge-btn', 'debug-btn', 'search-btn', 'debug-apply-limit', 'debug-apply-edge-limit'];
-        buttons.forEach(btnId => {
-            const btn = document.getElementById(btnId);
-            console.log(`按钮 ${btnId}:`, btn ? "存在" : "不存在");
-        });
-
-        console.log("=== 调试信息结束 ===");
-
-        // 显示简单提示
-        alert("调试信息已输出到控制台，请按F12查看");
-    }
-
-    isValidId(id) {
-        return id && typeof id === 'string' && id.length > 0;
-    }
-
-    renderSidebarLists() {
-        const nodesContainer = document.getElementById('nodes-container');
-        const edgesContainer = document.getElementById('edges-container');
-
-        // 清空容器
-        nodesContainer.innerHTML = '';
-        edgesContainer.innerHTML = '';
-
-        // 添加统计信息
-        const statsHtml = `
-        <div style="background: #f0f0f0; padding: 8px; margin-bottom: 10px; border-radius: 4px;">
-            <strong>统计信息:</strong><br>
-            节点: ${this.currentData.nodes.length}/${this.config.maxNodes}<br>
-            关系: ${this.currentData.edges.length}/${this.config.maxEdges}
-        </div>
-    `;
-
-        nodesContainer.innerHTML = statsHtml;
-
-        // 渲染节点列表
-        this.currentData.nodes.forEach(node => {
-            const li = document.createElement('li');
-            const displayName = node.properties && node.properties.name
-                ? node.properties.name
-                : `节点 ${node.id ? node.id.substring(0, 8) : '未知'}`;
-
-            li.textContent = displayName;
-            li.dataset.id = node.id;
-            li.addEventListener('click', () => {
-                console.log("点击节点，ID:", node.id);
-                this.showNodeDetail(node.id);
-            });
-            nodesContainer.appendChild(li);
-        });
-
-        // 渲染关系列表
-        this.currentData.edges.forEach(edge => {
-            const li = document.createElement('li');
-            const startName = edge.startNode && edge.startNode.properties && edge.startNode.properties.name
-                ? edge.startNode.properties.name
-                : (edge.startNodeId || '未知');
-            const endName = edge.endNode && edge.endNode.properties && edge.endNode.properties.name
-                ? edge.endNode.properties.name
-                : (edge.endNodeId || '未知');
-
-            li.textContent = `${edge.type || '关系'}: ${startName} → ${endName}`;
-            li.dataset.id = edge.id;
-            li.addEventListener('click', () => {
-                console.log("点击关系，ID:", edge.id);
-                this.showEdgeDetail(edge.id);
-            });
-            edgesContainer.appendChild(li);
-        });
-    }
-
-    async handleSearch() {
-        const query = document.getElementById('search-input').value.trim();
-        if (!query) return;
-
-        try {
-            // 简单搜索实现：搜索节点名称包含关键词的节点
-            const response = await this.api.searchNodes('name', query);
-
-            if (response.data.length > 0) {
-                // 高亮显示搜索结果
-                this.graphRenderer.highlightNodes(response.data.map(node => node.id));
-            } else {
-                alert('未找到匹配的节点');
-            }
-        } catch (error) {
-            console.error('搜索失败:', error);
-            alert('搜索失败');
-        }
-    }
-
+    /*
+     * UI 交互 
+     */
+    // 显示表单
+    // 编辑时传入节点对象，添加时传入null
     showNodeForm(node = null) {
         const isEdit = !!node;
         const title = isEdit ? '编辑节点' : '添加节点';
@@ -356,7 +227,7 @@ class KnowledgeGraphApp {
 
         this.showModal(formHtml);
 
-        // 绑定表单提交事件
+        // 表单提交
         document.getElementById('node-form').addEventListener('submit', (e) => {
             e.preventDefault();
             this.saveNode(node);
@@ -367,45 +238,7 @@ class KnowledgeGraphApp {
         });
     }
 
-    async saveNode(existingNode) {
-        try {
-            const name = document.getElementById('node-name').value;
-            const labels = document.getElementById('node-labels').value.split(',').map(l => l.trim()).filter(l => l);
-            const propertiesText = document.getElementById('node-properties').value || '{}';
-
-            // 安全地解析JSON
-            let properties;
-            try {
-                properties = JSON.parse(propertiesText);
-            } catch (e) {
-                throw new Error('属性JSON格式不正确');
-            }
-
-            properties.name = name; // 确保名称属性
-
-            let result;
-            if (existingNode) {
-                console.log("更新节点:", existingNode.id, properties);
-                result = await this.api.updateNode(existingNode.id, properties);
-            } else {
-                console.log("创建节点:", properties, labels);
-                result = await this.api.createNode({ properties, labels });
-            }
-
-            // 检查API响应是否成功
-            if (result && result.success) {
-                this.showSuccessMessage(existingNode ? '节点更新成功！' : '节点创建成功！');
-                this.hideModal();
-                this.loadData(); // 刷新数据
-            } else {
-                throw new Error(result?.message || '操作失败，请检查服务器响应');
-            }
-        } catch (error) {
-            console.error('保存节点失败:', error);
-            this.showErrorMessage('保存节点失败: ' + error.message);
-        }
-    }
-
+    // 编辑时传入关系对象，添加时传入null
     showEdgeForm(edge = null) {
         const isEdit = !!edge;
         const title = isEdit ? '编辑关系' : '添加关系';
@@ -438,7 +271,7 @@ class KnowledgeGraphApp {
 
         this.showModal(formHtml);
 
-        // 绑定表单提交事件
+        // 表单提交事件
         document.getElementById('edge-form').addEventListener('submit', (e) => {
             e.preventDefault();
             this.saveEdge(edge);
@@ -449,89 +282,7 @@ class KnowledgeGraphApp {
         });
     }
 
-    // 显示成功消息
-    showSuccessMessage(message) {
-        this.showMessage(message, 'success');
-    }
-
-    // 显示错误消息
-    showErrorMessage(message) {
-        this.showMessage(message, 'error');
-    }
-
-    // 显示消息（支持成功和错误类型）
-    showMessage(message, type = 'info') {
-        // 移除已存在的消息框
-        const existingMessage = document.getElementById('operation-message');
-        if (existingMessage) {
-            existingMessage.remove();
-        }
-
-        // 创建消息元素
-        const messageDiv = document.createElement('div');
-        messageDiv.id = 'operation-message';
-        messageDiv.className = `message ${type}`;
-        messageDiv.innerHTML = `
-        <span>${message}</span>
-        <button id="close-message-btn">&times;</button>
-    `;
-
-        // 添加到页面
-        document.body.appendChild(messageDiv);
-
-        // 添加关闭按钮事件
-        document.getElementById('close-message-btn').addEventListener('click', () => {
-            messageDiv.remove();
-        });
-
-        // 3秒后自动消失（仅对成功消息）
-        if (type === 'success') {
-            setTimeout(() => {
-                if (messageDiv.parentNode) {
-                    messageDiv.remove();
-                }
-            }, 3000);
-        }
-    }
-
-    async saveEdge(existingEdge) {
-        try {
-            const startNodeId = document.getElementById('edge-start').value;
-            const endNodeId = document.getElementById('edge-end').value;
-            const type = document.getElementById('edge-type').value;
-            const propertiesText = document.getElementById('edge-properties').value || '{}';
-
-            // 安全地解析JSON
-            let properties;
-            try {
-                properties = JSON.parse(propertiesText);
-            } catch (e) {
-                throw new Error('属性JSON格式不正确');
-            }
-
-            let result;
-            if (existingEdge) {
-                console.log("更新关系:", existingEdge.id, properties);
-                result = await this.api.updateEdge(existingEdge.id, properties);
-            } else {
-                console.log("创建关系:", startNodeId, endNodeId, type, properties);
-                result = await this.api.createEdge({ startNodeId, endNodeId, type, properties });
-            }
-
-            // 检查API响应是否成功
-            if (result && result.success) {
-                this.showSuccessMessage(existingEdge ? '关系更新成功！' : '关系创建成功！');
-                this.hideModal();
-                this.loadData(); // 刷新数据
-            } else {
-                throw new Error(result?.message || '操作失败，请检查服务器响应');
-            }
-        } catch (error) {
-            console.error('保存关系失败:', error);
-            this.showErrorMessage('保存关系失败: ' + error.message);
-        }
-    }
-
+    // 显示节点详情
     async showNodeDetail(nodeId) {
         if (!this.isValidId(nodeId)) {
             alert('无效的节点ID');
@@ -541,7 +292,6 @@ class KnowledgeGraphApp {
         try {
             console.log("显示节点详情，ID:", nodeId);
 
-            // 首先检查节点是否在当前数据中
             const nodeInCurrentData = this.currentData.nodes.find(n => n.id === nodeId);
             if (!nodeInCurrentData) {
                 console.warn("节点不在当前数据中，尝试从API获取");
@@ -598,6 +348,7 @@ class KnowledgeGraphApp {
         }
     }
 
+    // 显示关系详情
     async showEdgeDetail(edgeId) {
         if (!this.isValidId(edgeId)) {
             alert('无效的关系ID');
@@ -606,7 +357,15 @@ class KnowledgeGraphApp {
 
         try {
             console.log("显示关系详情，ID:", edgeId);
+            console.log("当前数据中的所有关系ID:", this.currentData.edges.map(e => e.id));
 
+            // 检查关系是否在当前数据中
+            const edgeInCurrentData = this.currentData.edges.find(e => e.id === edgeId);
+            if (edgeInCurrentData) {
+                console.log("关系在当前数据中找到:", edgeInCurrentData);
+            } else {
+                console.warn("关系不在当前数据中");
+            }
             const response = await this.api.getEdge(edgeId);
 
             if (!response.success) {
@@ -654,19 +413,20 @@ class KnowledgeGraphApp {
             });
         } catch (error) {
             console.error('获取关系详情失败:', error);
-            alert('获取关系详情失败: ' + error.message);
-
-            // 显示错误详情
+            // 显示更详细的错误信息
             const errorHtml = `
             <h2>错误</h2>
             <p>获取关系详情失败</p>
             <p><strong>错误信息:</strong> ${error.message}</p>
             <p><strong>关系ID:</strong> ${edgeId}</p>
+            <p><strong>当前数据中的关系ID列表:</strong></p>
+            <pre>${JSON.stringify(this.currentData.edges.map(e => ({ id: e.id, type: e.type })), null, 2)}</pre>
         `;
             this.showModal(errorHtml);
         }
     }
 
+    // 删除节点
     async deleteNode(nodeId) {
         try {
             await this.api.deleteNode(nodeId);
@@ -678,6 +438,7 @@ class KnowledgeGraphApp {
         }
     }
 
+    // 删除关系
     async deleteEdge(edgeId) {
         try {
             await this.api.deleteEdge(edgeId);
@@ -689,6 +450,28 @@ class KnowledgeGraphApp {
         }
     }
 
+    // 搜索
+    async handleSearch() {
+        const query = document.getElementById('search-input').value.trim();
+        if (!query) return;
+
+        try {
+            const response = await this.api.searchNodes('name', query);
+
+            if (response.data.length > 0) {
+                this.graphRenderer.highlightNodes(response.data.map(node => node.id));
+            } else {
+                alert('未找到匹配的节点');
+            }
+        } catch (error) {
+            console.error('搜索失败:', error);
+            alert('搜索失败');
+        }
+    }
+
+    /*
+     * 模态框 
+     */
     showModal(content) {
         document.getElementById('modal-body').innerHTML = content;
         document.getElementById('modal').style.display = 'block';
@@ -697,12 +480,226 @@ class KnowledgeGraphApp {
     hideModal() {
         document.getElementById('modal').style.display = 'none';
     }
+
+    debugInfo() {
+        console.log("=== 调试信息开始 ===");
+        console.log("当前配置:", this.config);
+        console.log("最大节点数:", this.config.maxNodes);
+        console.log("最大边数:", this.config.maxEdges);
+
+        console.log("API基础URL:", this.api.baseUrl);
+
+        console.log("测试API连接...");
+
+        fetch(`${this.api.baseUrl}/nodes?limit=1`)
+            .then(response => {
+                console.log("API节点响应状态:", response.status, response.statusText);
+                return response.json();
+            })
+            .then(data => {
+                console.log("API节点测试成功:", data);
+            })
+            .catch(error => {
+                console.error("API节点测试失败:", error);
+            });
+
+        fetch(`${this.api.baseUrl}/edges?limit=1`)
+            .then(response => {
+                console.log("API边响应状态:", response.status, response.statusText);
+                return response.json();
+            })
+            .then(data => {
+                console.log("API边测试成功:", data);
+            })
+            .catch(error => {
+                console.error("API边测试失败:", error);
+            });
+
+        console.log("图谱容器:", this.graphRenderer.containerId);
+        console.log("图谱实例:", this.graphRenderer.graph ? "已初始化" : "未初始化");
+
+        const buttons = ['refresh-btn', 'add-node-btn', 'add-edge-btn', 'debug-btn', 'search-btn', 'debug-apply-limit', 'debug-apply-edge-limit'];
+        buttons.forEach(btnId => {
+            const btn = document.getElementById(btnId);
+            console.log(`按钮 ${btnId}:`, btn ? "存在" : "不存在");
+        });
+
+        console.log("=== 调试信息结束 ===");
+
+        alert("调试信息已输出到控制台，请按F12查看");
+    }
+
+    isValidId(id) {
+        return id && typeof id === 'string' && id.length > 0;
+    }
+
+    renderSidebarLists() {
+        const nodesContainer = document.getElementById('nodes-container');
+        const edgesContainer = document.getElementById('edges-container');
+
+        nodesContainer.innerHTML = '';
+        edgesContainer.innerHTML = '';
+
+        const statsHtml = `
+        <div style="background: #f0f0f0; padding: 8px; margin-bottom: 10px; border-radius: 4px;">
+            <strong>统计信息:</strong><br>
+            节点: ${this.currentData.nodes.length}/${this.config.maxNodes}<br>
+            关系: ${this.currentData.edges.length}/${this.config.maxEdges}
+        </div>
+    `;
+
+        nodesContainer.innerHTML = statsHtml;
+
+        this.currentData.nodes.forEach(node => {
+            const li = document.createElement('li');
+            const displayName = node.properties && node.properties.name
+                ? node.properties.name
+                : `节点 ${node.id ? node.id.substring(0, 8) : '未知'}`;
+
+            li.textContent = displayName;
+            li.dataset.id = node.id;
+            li.addEventListener('click', () => {
+                console.log("点击节点，ID:", node.id);
+                this.showNodeDetail(node.id);
+            });
+            nodesContainer.appendChild(li);
+        });
+
+        this.currentData.edges.forEach(edge => {
+            const li = document.createElement('li');
+            const startName = edge.startNode && edge.startNode.properties && edge.startNode.properties.name
+                ? edge.startNode.properties.name
+                : (edge.startNodeId || '未知');
+            const endName = edge.endNode && edge.endNode.properties && edge.endNode.properties.name
+                ? edge.endNode.properties.name
+                : (edge.endNodeId || '未知');
+
+            li.textContent = `${edge.type || '关系'}: ${startName} → ${endName}`;
+            li.dataset.id = edge.id;
+            li.addEventListener('click', () => {
+                console.log("点击关系，ID:", edge.id);
+                this.showEdgeDetail(edge.id);
+            });
+            edgesContainer.appendChild(li);
+        });
+    }
+
+    async saveNode(existingNode) {
+        try {
+            const name = document.getElementById('node-name').value;
+            const labels = document.getElementById('node-labels').value.split(',').map(l => l.trim()).filter(l => l);
+            const propertiesText = document.getElementById('node-properties').value || '{}';
+
+            let properties;
+            try {
+                properties = JSON.parse(propertiesText);
+            } catch (e) {
+                throw new Error('属性JSON格式不正确');
+            }
+
+            properties.name = name; // 确保名称属性
+
+            let result;
+            if (existingNode) {
+                console.log("更新节点:", existingNode.id, properties);
+                result = await this.api.updateNode(existingNode.id, properties);
+            } else {
+                console.log("创建节点:", properties, labels);
+                result = await this.api.createNode({ properties, labels });
+            }
+
+            // 检查API响应是否成功
+            if (result && result.success) {
+                this.showSuccessMessage(existingNode ? '节点更新成功！' : '节点创建成功！');
+                this.hideModal();
+                this.loadData(); // 刷新数据
+            } else {
+                throw new Error(result?.message || '操作失败，请检查服务器响应');
+            }
+        } catch (error) {
+            console.error('保存节点失败:', error);
+            this.showErrorMessage('保存节点失败: ' + error.message);
+        }
+    }
+
+    showSuccessMessage(message) {
+        this.showMessage(message, 'success');
+    }
+
+    showErrorMessage(message) {
+        this.showMessage(message, 'error');
+    }
+
+    showMessage(message, type = 'info') {
+        const existingMessage = document.getElementById('operation-message');
+        if (existingMessage) {
+            existingMessage.remove();
+        }
+
+        const messageDiv = document.createElement('div');
+        messageDiv.id = 'operation-message';
+        messageDiv.className = `message ${type}`;
+        messageDiv.innerHTML = `
+        <span>${message}</span>
+        <button id="close-message-btn">&times;</button>
+    `;
+
+        document.body.appendChild(messageDiv);
+
+        document.getElementById('close-message-btn').addEventListener('click', () => {
+            messageDiv.remove();
+        });
+
+        if (type === 'success') {
+            setTimeout(() => {
+                if (messageDiv.parentNode) {
+                    messageDiv.remove();
+                }
+            }, 3000);
+        }
+    }
+
+    async saveEdge(existingEdge) {
+        try {
+            const startNodeId = document.getElementById('edge-start').value;
+            const endNodeId = document.getElementById('edge-end').value;
+            const type = document.getElementById('edge-type').value;
+            const propertiesText = document.getElementById('edge-properties').value || '{}';
+
+            let properties;
+            try {
+                properties = JSON.parse(propertiesText);
+            } catch (e) {
+                throw new Error('属性JSON格式不正确');
+            }
+
+            let result;
+            if (existingEdge) {
+                console.log("更新关系:", existingEdge.id, properties);
+                result = await this.api.updateEdge(existingEdge.id, properties);
+            } else {
+                console.log("创建关系:", startNodeId, endNodeId, type, properties);
+                result = await this.api.createEdge({ startNodeId, endNodeId, type, properties });
+            }
+
+            if (result && result.success) {
+                this.showSuccessMessage(existingEdge ? '关系更新成功！' : '关系创建成功！');
+                this.hideModal();
+                this.loadData();
+            } else {
+                throw new Error(result?.message || '操作失败，请检查服务器响应');
+            }
+        } catch (error) {
+            console.error('保存关系失败:', error);
+            this.showErrorMessage('保存关系失败: ' + error.message);
+        }
+    }
 }
 
 // 初始化应用
 document.addEventListener('DOMContentLoaded', () => {
     const app = new KnowledgeGraphApp();
-    window.app = app; // 设置为全局变量
+    window.app = app;
 });
 
 // 全局错误处理

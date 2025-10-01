@@ -1,11 +1,9 @@
 const express = require('express');
 const router = express.Router();
 
-// 引入各个子路由模块
 const nodesRouter = require('./nodes');
 const edgesRouter = require('./edges');
 
-// 根路径欢迎信息
 router.get('/', (req, res) => {
     res.json({
         success: true,
@@ -20,7 +18,6 @@ router.get('/', (req, res) => {
     });
 });
 
-// 健康检查端点
 router.get('/health', (req, res) => {
     res.json({
         success: true,
@@ -30,7 +27,6 @@ router.get('/health', (req, res) => {
     });
 });
 
-// API信息端点
 router.get('/api', (req, res) => {
     res.json({
         success: true,
@@ -59,14 +55,10 @@ router.get('/api', (req, res) => {
     });
 });
 
-// 使用节点路由
 router.use('/nodes', nodesRouter);
 
-// 使用边路由
 router.use('/edges', edgesRouter);
 
-// 404处理 - 使用更兼容的方式处理不存在的API端点
-// 为所有可能的路径定义处理程序，而不是使用通配符
 router.get('*', (req, res) => {
     handle404(req, res);
 });
@@ -83,7 +75,6 @@ router.delete('*', (req, res) => {
     handle404(req, res);
 });
 
-// 404处理函数
 function handle404(req, res) {
     res.status(404).json({
         success: false,
@@ -98,7 +89,6 @@ function handle404(req, res) {
     });
 }
 
-// 错误处理中间件
 router.use((err, req, res, next) => {
     console.error('服务器错误:', err);
     res.status(500).json({

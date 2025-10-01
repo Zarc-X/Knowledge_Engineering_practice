@@ -1,7 +1,7 @@
-require('dotenv').config(); // 加载.env环境变量
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const routes = require('./routes'); // 导入所有路由
+const routes = require('./routes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -28,8 +28,7 @@ app.use(cors({
 }));
 app.use(express.json()); // 解析JSON请求体
 
-// 路由
-app.use('/api', routes); // 所有API路由都以/api开头
+app.use('/api', routes);
 
 // 全局错误处理中间件
 app.use((err, req, res, next) => {
@@ -41,7 +40,6 @@ app.use((err, req, res, next) => {
     });
 });
 
-// 启动服务器
 app.listen(PORT, () => {
     console.log(`后端服务器已启动在 http://localhost:${PORT}`);
 });

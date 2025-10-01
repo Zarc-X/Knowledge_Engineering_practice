@@ -1,4 +1,3 @@
-// routes/nodes.js
 const express = require('express');
 const router = express.Router();
 const nodeService = require('../services/node.service');
@@ -131,7 +130,6 @@ router.put('/:id', async (req, res) => {
         const { id } = req.params;
         const { properties } = req.body;
 
-        // 验证必要参数
         if (!properties) {
             return res.status(400).json({
                 success: false,
@@ -203,7 +201,7 @@ router.delete('/:id', async (req, res) => {
 router.get('/search/:key/:value', async (req, res) => {
     try {
         const { key, value } = req.params;
-        const { limit = 10000, skip = 0 } = req.query;  // 修改默认值
+        const { limit = 10000, skip = 0 } = req.query;
 
         const nodes = await nodeService.searchNodes(
             key,
@@ -235,7 +233,7 @@ router.get('/search/:key/:value', async (req, res) => {
 router.get('/label/:label', async (req, res) => {
     try {
         const { label } = req.params;
-        const { limit = 10000, skip = 0 } = req.query;  // 修改默认值
+        const { limit = 10000, skip = 0 } = req.query;
 
         const nodes = await nodeService.getNodesByLabel(
             label,

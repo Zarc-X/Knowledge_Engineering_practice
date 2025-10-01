@@ -63,15 +63,27 @@ class EdgeService {
      */
     async getEdgeById(id) {
         try {
-            const query = `
-        MATCH ()-[r {id: $id}]->()
-        RETURN r, startNode(r) as start, endNode(r) as end
-      `;
+            console.log(`边服务: 根据ID获取关系, ID: ${id}, 类型: ${typeof id}`);
 
-            const params = { id };
+            // 尝试两种查询方式：使用id属性或Neo4j内部ID
+            let query = `
+            MATCH ()-[r]->()
+            WHERE r.id = $id OR ID(r) = $neo4jId
+            RETURN r, startNode(r) as start, endNode(r) as end
+        `;
+
+            const params = {
+                id: id,
+                neo4jId: int(parseInt(id)) // 同时尝试作为Neo4j内部ID查询
+            };
+
+            console.log('查询参数:', params);
+
             const result = await neo4j.read(query, params);
+            console.log(`查询结果记录数: ${result.records.length}`);
 
             if (result.records.length === 0) {
+                console.log(`未找到关系，ID: ${id}`);
                 return null;
             }
 
@@ -80,13 +92,15 @@ class EdgeService {
             const startNode = record.get('start');
             const endNode = record.get('end');
 
-            return this.formatEdge(relationship, startNode, endNode);
+            const formattedEdge = this.formatEdge(relationship, startNode, endNode);
+            console.log('格式化后的关系:', formattedEdge);
+
+            return formattedEdge;
         } catch (error) {
             console.error('根据ID获取关系失败:', error);
             throw error;
         }
     }
-
     /**
      * 根据类型获取关系
      * @param {string} type - 关系类型
@@ -103,7 +117,6 @@ class EdgeService {
         LIMIT $limit
       `;
 
-            // const params = { skip, limit };
             // 确保参数是整数
             const params = {
                 skip: int(parseInt(skip)),
@@ -133,7 +146,6 @@ class EdgeService {
      */
     async createEdge(startNodeId, endNodeId, type, properties = {}) {
         try {
-            // 生成唯一ID
             const id = uuidv4();
             const edgeProperties = { ...properties, id };
 
@@ -215,7 +227,6 @@ class EdgeService {
             const params = { id };
             const result = await neo4j.write(query, params);
 
-            // 检查是否有关系被删除
             return result.summary.counters.updates().relationshipsDeleted > 0;
         } catch (error) {
             console.error('删除关系失败:', error);
@@ -254,11 +265,6 @@ class EdgeService {
         LIMIT $limit
       `;
 
-            // const params = {
-            //     nodeId,
-            //     skip,
-            //     limit
-            // };
             // 确保参数是整数
             const params = {
                 nodeId,
@@ -303,11 +309,9 @@ class EdgeService {
                 labels: endNode.labels,
                 properties: endNode.properties
             },
-            // 如果需要，可以添加Neo4j内部ID
             neo4jId: relationship.identity.toString()
         };
     }
 }
 
-// 导出单例实例
 module.exports = new EdgeService();

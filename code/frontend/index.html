@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>知识图谱管理系统</title>
     <link rel="stylesheet" href="style.css">
-    <!-- 引入AntV G6 -->
     <script src="https://unpkg.com/@antv/g6@4.8.20/dist/g6.min.js"></script>
 </head>
 
@@ -14,20 +13,17 @@
     <div class="container">
         <header>
             <h1>知识图谱管理系统</h1>
-            <!-- 在header的controls div中添加调试控件 -->
             <div class="controls">
                 <button id="refresh-btn">刷新数据</button>
                 <button id="add-node-btn">添加节点</button>
                 <button id="add-edge-btn">添加关系</button>
 
-                <!-- 节点数控制 -->
                 <div style="display: inline-block; margin-left: 10px;">
                     <span style="color: white; margin-right: 5px;">节点:</span>
                     <input type="number" id="debug-node-limit" value="256" style="width: 60px;">
                     <button id="debug-apply-limit">应用</button>
                 </div>
 
-                <!-- 边数控制 -->
                 <div style="display: inline-block; margin-left: 10px;">
                     <span style="color: white; margin-right: 5px;">边:</span>
                     <input type="number" id="debug-edge-limit" value="256" style="width: 60px;">
@@ -61,7 +57,6 @@
             </div>
         </div>
 
-        <!-- 模态框 -->
         <div id="modal" class="modal">
             <div class="modal-content">
                 <span class="close">&times;</span>
