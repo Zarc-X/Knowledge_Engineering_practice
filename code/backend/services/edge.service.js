@@ -63,24 +63,25 @@ class EdgeService {
      */
     async getEdgeById(id) {
         try {
-            console.log(`边服务: 根据ID获取关系, ID: ${id}, 类型: ${typeof id}`);
+            console.log(`边服务: 根据ID获取关系, ID: ${id}`);
 
-            // 尝试两种查询方式：使用id属性或Neo4j内部ID
+            // 只查询必要的关系信息，不返回完整节点数据
             let query = `
-            MATCH ()-[r]->()
-            WHERE r.id = $id OR ID(r) = $neo4jId
-            RETURN r, startNode(r) as start, endNode(r) as end
+        MATCH (start)-[r]->(end)
+        WHERE r.id = $id
+        RETURN 
+            r.id as id,
+            type(r) as type,
+            properties(r) as properties,
+            start.id as startNodeId,
+            end.id as endNodeId,
+            labels(start) as startLabels,
+            labels(end) as endLabels
         `;
 
-            const params = {
-                id: id,
-                neo4jId: int(parseInt(id)) // 同时尝试作为Neo4j内部ID查询
-            };
-
-            console.log('查询参数:', params);
+            const params = { id };
 
             const result = await neo4j.read(query, params);
-            console.log(`查询结果记录数: ${result.records.length}`);
 
             if (result.records.length === 0) {
                 console.log(`未找到关系，ID: ${id}`);
@@ -88,19 +89,25 @@ class EdgeService {
             }
 
             const record = result.records[0];
-            const relationship = record.get('r');
-            const startNode = record.get('start');
-            const endNode = record.get('end');
-
-            const formattedEdge = this.formatEdge(relationship, startNode, endNode);
-            console.log('格式化后的关系:', formattedEdge);
-
-            return formattedEdge;
+            return {
+                id: record.get('id'),
+                type: record.get('type'),
+                properties: record.get('properties'),
+                startNode: {
+                    id: record.get('startNodeId'),
+                    labels: record.get('startLabels')
+                },
+                endNode: {
+                    id: record.get('endNodeId'),
+                    labels: record.get('endLabels')
+                }
+            };
         } catch (error) {
             console.error('根据ID获取关系失败:', error);
             throw error;
         }
     }
+
     /**
      * 根据类型获取关系
      * @param {string} type - 关系类型
@@ -217,17 +224,32 @@ class EdgeService {
      * @param {string} id - 关系ID
      * @returns {Promise<boolean>} 是否成功删除
      */
+    // 在 edge.service.js 中修改 deleteEdge 方法
     async deleteEdge(id) {
         try {
+            console.log(`删除关系服务: ID=${id}, 类型=${typeof id}`);
+
+            // 使用更灵活的查询，同时支持字符串ID和Neo4j内部ID
             const query = `
-        MATCH ()-[r {id: $id}]->()
+        MATCH ()-[r]->()
+        WHERE r.id = $id OR ID(r) = $neo4jId
         DELETE r
-      `;
+        RETURN r
+        `;
 
-            const params = { id };
+            const params = {
+                id: id,
+                neo4jId: int(parseInt(id)) // 同时尝试作为Neo4j内部ID
+            };
+
+            console.log('删除关系参数:', params);
+
             const result = await neo4j.write(query, params);
+            const deletedCount = result.summary.counters.updates().relationshipsDeleted;
 
-            return result.summary.counters.updates().relationshipsDeleted > 0;
+            console.log(`删除关系结果: 删除了 ${deletedCount} 个关系`);
+
+            return deletedCount > 0;
         } catch (error) {
             console.error('删除关系失败:', error);
             throw error;

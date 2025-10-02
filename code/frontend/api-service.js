@@ -4,8 +4,50 @@ class ApiService {
     }
 
 
+    // async request(endpoint, options = {}) {
+    //     const url = `${this.baseUrl}${endpoint}`;
+
+    //     try {
+    //         if (options.body && typeof options.body !== 'string') {
+    //             options.body = JSON.stringify(options.body);
+    //         }
+
+    //         const response = await fetch(url, {
+    //             headers: {
+    //                 'Content-Type': 'application/json',
+    //                 ...options.headers
+    //             },
+    //             ...options
+    //         });
+
+    //         if (!response.ok) {
+    //             const errorText = await response.text();
+    //             throw new Error(`API请求失败: ${response.status} ${response.statusText} - ${errorText}`);
+    //         }
+
+    //         const result = await response.json();
+
+    //         if (result && typeof result.success !== 'undefined') {
+    //             return result;
+    //         } else {
+    //             return {
+    //                 success: true,
+    //                 data: result
+    //             };
+    //         }
+    //     } catch (error) {
+    //         console.error('API请求错误:', error);
+    //         throw error;
+    //     }
+    // }
+
     async request(endpoint, options = {}) {
         const url = `${this.baseUrl}${endpoint}`;
+
+        // 设置超时（5秒）
+        const timeout = 5000;
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
 
         try {
             if (options.body && typeof options.body !== 'string') {
@@ -17,8 +59,11 @@ class ApiService {
                     'Content-Type': 'application/json',
                     ...options.headers
                 },
+                signal: controller.signal,
                 ...options
             });
+
+            clearTimeout(timeoutId);
 
             if (!response.ok) {
                 const errorText = await response.text();
@@ -36,7 +81,12 @@ class ApiService {
                 };
             }
         } catch (error) {
+            clearTimeout(timeoutId);
             console.error('API请求错误:', error);
+
+            if (error.name === 'AbortError') {
+                throw new Error('请求超时，请检查网络连接或服务器状态');
+            }
             throw error;
         }
     }
@@ -145,10 +195,19 @@ class ApiService {
         });
     }
 
+    // 在 api-service.js 中修改 deleteEdge 方法
     async deleteEdge(id) {
-        return this.request(`/edges/${id}`, {
-            method: 'DELETE'
-        });
+        try {
+            console.log("删除关系API调用，ID:", id);
+            const response = await this.request(`/edges/${id}`, {
+                method: 'DELETE'
+            });
+            console.log("删除关系API响应:", response);
+            return response;
+        } catch (error) {
+            console.error("删除关系API错误:", error);
+            throw error;
+        }
     }
 
     async searchNodes(key, value, limit = 10000, skip = 0) {

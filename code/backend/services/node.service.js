@@ -53,9 +53,14 @@ class NodeService {
      */
     async getNodeById(id) {
         try {
+            // 优化查询，只返回必要字段
             const query = `
-        MATCH (n {id: $id})
-        RETURN n
+        MATCH (n)
+        WHERE n.id = $id
+        RETURN 
+            n.id as id,
+            labels(n) as labels,
+            properties(n) as properties
       `;
 
             const params = { id };
@@ -65,8 +70,12 @@ class NodeService {
                 return null;
             }
 
-            const node = result.records[0].get('n');
-            return this.formatNode(node);
+            const record = result.records[0];
+            return {
+                id: record.get('id'),
+                labels: record.get('labels'),
+                properties: record.get('properties')
+            };
         } catch (error) {
             console.error('根据ID获取节点失败:', error);
             throw error;
@@ -204,6 +213,7 @@ class NodeService {
             throw error;
         }
     }
+
     /**
      * 搜索节点（根据属性值）
      * @param {string} key - 属性键
