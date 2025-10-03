@@ -44,8 +44,10 @@ class ApiService {
     async request(endpoint, options = {}) {
         const url = `${this.baseUrl}${endpoint}`;
 
-        // 设置超时（5秒）
-        const timeout = 5000;
+        // 根据操作类型设置不同的超时时间
+        const isDeleteOperation = options.method === 'DELETE';
+        const timeout = isDeleteOperation ? 30000 : 15000; // 删除操作30秒，其他15秒
+
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeout);
 
@@ -85,7 +87,7 @@ class ApiService {
             console.error('API请求错误:', error);
 
             if (error.name === 'AbortError') {
-                throw new Error('请求超时，请检查网络连接或服务器状态');
+                throw new Error(`请求超时（${timeout}ms），请检查网络连接或服务器状态`);
             }
             throw error;
         }
@@ -139,11 +141,32 @@ class ApiService {
         });
     }
 
+    // 在 api-service.js 中增强 deleteNode 方法
     async deleteNode(id) {
-        return this.request(`/nodes/${id}`, {
-            method: 'DELETE'
-        });
+        try {
+            console.log("删除节点API调用，ID:", id);
+
+            // 增加超时时间到30秒
+            const response = await this.request(`/nodes/${id}`, {
+                method: 'DELETE',
+                timeout: 30000 // 30秒超时
+            });
+
+            console.log("删除节点API响应:", response);
+            return response;
+        } catch (error) {
+            console.error("删除节点API错误:", error);
+
+            if (error.message.includes('timeout') || error.name === 'AbortError') {
+                return {
+                    success: 'unknown',
+                    message: '请求超时，请稍后手动确认删除状态'
+                };
+            }
+            throw error;
+        }
     }
+
 
     // 关系相关API
     async getEdges(limit = 10000, skip = 0, type = null) {
@@ -199,9 +222,13 @@ class ApiService {
     async deleteEdge(id) {
         try {
             console.log("删除关系API调用，ID:", id);
+
+            // 同样增加关系删除的超时时间
             const response = await this.request(`/edges/${id}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                timeout: 30000 // 30秒超时
             });
+
             console.log("删除关系API响应:", response);
             return response;
         } catch (error) {

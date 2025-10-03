@@ -188,21 +188,32 @@ class NodeService {
         try {
             console.log(`删除节点服务: ID=${id}, 类型=${typeof id}`);
 
-            // 使用与 getNodeById 相同的查询逻辑
-            const query = `
+            // 首先删除与该节点相关的所有关系
+            const deleteRelationsQuery = `
+            MATCH (n)-[r]-()
+            WHERE n.id = $id OR ID(n) = $neo4jId
+            DELETE r
+        `;
+
+            // 然后删除节点
+            const deleteNodeQuery = `
             MATCH (n)
             WHERE n.id = $id OR ID(n) = $neo4jId
-            DETACH DELETE n
+            DELETE n
         `;
 
             const params = {
                 id: id,
-                neo4jId: int(parseInt(id)) // 同时尝试作为Neo4j内部ID
+                neo4jId: int(parseInt(id))
             };
 
             console.log('删除节点参数:', params);
 
-            const result = await neo4j.write(query, params);
+            // 先删除关系
+            await neo4j.write(deleteRelationsQuery, params);
+
+            // 再删除节点
+            const result = await neo4j.write(deleteNodeQuery, params);
             const deletedCount = result.summary.counters.updates().nodesDeleted;
 
             console.log(`删除节点结果: 删除了 ${deletedCount} 个节点`);

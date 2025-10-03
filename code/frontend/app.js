@@ -630,14 +630,70 @@ class KnowledgeGraphApp {
     }
 
     // 删除节点
+    // 在 app.js 中修改 deleteNode 方法
     async deleteNode(nodeId) {
         try {
-            await this.api.deleteNode(nodeId);
-            this.hideModal();
-            this.loadData(); // 刷新数据
+            console.log("开始删除节点，ID:", nodeId);
+
+            if (!this.isValidId(nodeId)) {
+                throw new Error('无效的节点ID');
+            }
+
+            const response = await this.api.deleteNode(nodeId);
+            console.log("删除节点API响应:", response);
+
+            if (response && (response.success === true || response.success === undefined || response.success === 'unknown')) {
+                // 清理缓存
+                this.nodeCache.delete(nodeId);
+
+                // 清理与该节点相关的边缓存
+                this.currentData.edges
+                    .filter(edge =>
+                        edge.startNode?.id === nodeId ||
+                        edge.endNode?.id === nodeId
+                    )
+                    .forEach(edge => this.edgeCache.delete(edge.id));
+
+                // 从当前数据中移除已删除的节点
+                this.currentData.nodes = this.currentData.nodes.filter(node => node.id !== nodeId);
+
+                // 同时移除相关的边
+                this.currentData.edges = this.currentData.edges.filter(edge =>
+                    edge.startNode?.id !== nodeId && edge.endNode?.id !== nodeId
+                );
+
+                if (response.success === 'unknown') {
+                    this.showMessage('删除请求已发送，但由于超时请刷新页面确认删除状态', 'warning');
+                } else {
+                    this.showSuccessMessage('节点删除成功！');
+                }
+
+                this.hideModal();
+
+                // 刷新UI但不重新加载所有数据
+                this.renderSidebarLists();
+                this.graphRenderer.render(this.currentData);
+
+                // 如果是超时情况，建议用户刷新数据
+                if (response.success === 'unknown') {
+                    setTimeout(() => {
+                        if (confirm('由于删除操作超时，建议刷新页面确认数据状态。是否立即刷新？')) {
+                            this.loadData();
+                        }
+                    }, 2000);
+                }
+            } else {
+                throw new Error(response?.message || '删除操作失败');
+            }
         } catch (error) {
             console.error('删除节点失败:', error);
-            alert('删除节点失败');
+
+            let errorMessage = '删除节点失败: ' + error.message;
+            if (error.message.includes('timeout') || error.name === 'AbortError') {
+                errorMessage = '删除请求超时，但节点可能已在后台删除，请刷新页面确认';
+            }
+
+            this.showErrorMessage(errorMessage);
         }
     }
 
@@ -658,9 +714,15 @@ class KnowledgeGraphApp {
                 // 清理缓存
                 this.edgeCache.delete(edgeId);
 
+                // 从当前数据中移除已删除的关系
+                this.currentData.edges = this.currentData.edges.filter(edge => edge.id !== edgeId);
+
                 this.showSuccessMessage('关系删除成功！');
                 this.hideModal();
-                this.loadData(); // 刷新数据
+
+                // 刷新UI但不重新加载所有数据
+                this.renderSidebarLists();
+                this.graphRenderer.render(this.currentData);
             } else {
                 throw new Error(response?.message || '删除操作失败');
             }

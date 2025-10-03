@@ -141,8 +141,8 @@ router.put('/:id', async (req, res) => {
 
         res.json({
             success: true,
-            message: '节点更新成功',
-            data: node
+            message: '节点删除成功',
+            deletedCount: 1 // 明确返回删除的数量
         });
     } catch (error) {
         console.error('更新节点失败:', error);
