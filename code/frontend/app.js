@@ -227,7 +227,6 @@ class KnowledgeGraphApp {
     //     }
     // }
 
-    // 在 loadData 方法中添加缓存预加载
     async loadData() {
         try {
             console.log("开始加载数据...");
@@ -240,7 +239,33 @@ class KnowledgeGraphApp {
             this.currentData.nodes = nodesResponse.data || [];
             this.currentData.edges = edgesResponse.data || [];
 
-            // 预加载缓存（添加错误处理）
+            // 添加详细的数据诊断
+            console.log("=== 数据诊断 ===");
+            console.log("节点数量:", this.currentData.nodes.length);
+            console.log("边数量:", this.currentData.edges.length);
+
+            // 检查边的source和target是否能在节点中找到
+            const nodeIds = new Set(this.currentData.nodes.map(node => node.id));
+            let validEdges = 0;
+
+            this.currentData.edges.forEach(edge => {
+                const sourceId = edge.startNode ? edge.startNode.id : edge.startNodeId;
+                const targetId = edge.endNode ? edge.endNode.id : edge.endNodeId;
+
+                const sourceExists = nodeIds.has(sourceId);
+                const targetExists = nodeIds.has(targetId);
+
+                if (sourceExists && targetExists) {
+                    validEdges++;
+                } else {
+                    console.warn(`无效的边: ${edge.id}, source存在: ${sourceExists}, target存在: ${targetExists}`);
+                    console.warn(`  source: ${sourceId}, target: ${targetId}`);
+                }
+            });
+
+            console.log(`有效边数量: ${validEdges}/${this.currentData.edges.length}`);
+
+            // 预加载缓存
             try {
                 this.preloadCaches();
             } catch (cacheError) {

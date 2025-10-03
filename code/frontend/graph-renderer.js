@@ -17,7 +17,6 @@ class GraphRenderer {
         const height = container.clientHeight || 600;
 
         this.graph = new G6.Graph({
-            // G6 画布配置
             container: this.containerId,
             width,
             height,
@@ -39,7 +38,9 @@ class GraphRenderer {
             },
             defaultEdge: {
                 style: {
-                    stroke: '#e2e2e2'
+                    stroke: '#e2e2e2',
+                    lineWidth: 2, // 增加线宽确保可见
+                    opacity: 1 // 确保不透明
                 },
                 labelCfg: {
                     autoRotate: true,
@@ -57,18 +58,22 @@ class GraphRenderer {
             }
         });
 
-        window.addEventListener('resize', () => {
-            if (!this.graph || this.graph.get('destroyed')) return;
-            const container = document.getElementById(this.containerId);
-            const width = container.clientWidth;
-            const height = container.clientHeight;
-            this.graph.changeSize(width, height);
+        // 添加渲染完成事件监听
+        this.graph.on('afterrender', () => {
+            console.log('图谱渲染完成');
+            const edges = this.graph.getEdges();
+            console.log(`实际渲染的边数量: ${edges.length}`);
         });
     }
 
     //将数据转换为G6格式并渲染
     render(data) {
-        if (!this.graph) return;
+        if (!this.graph) {
+            console.error("图谱实例未初始化");
+            return;
+        }
+
+        console.log("原始数据 - 节点:", data.nodes.length, "边:", data.edges.length);
 
         const nodes = data.nodes.map(node => ({
             id: node.id,
@@ -79,26 +84,92 @@ class GraphRenderer {
             labels: node.labels || []
         }));
 
-        const edges = data.edges.map(edge => ({
-            id: edge.id,
-            source: edge.startNode ? edge.startNode.id : edge.startNodeId,
-            target: edge.endNode ? edge.endNode.id : edge.endNodeId,
-            label: edge.type || '关系',
-            properties: edge.properties || {}
-        }));
+        // 增强边的转换逻辑
+        const edges = data.edges.map(edge => {
+            // 多种方式获取source和target
+            const source = edge.startNode ? edge.startNode.id :
+                edge.startNodeId ? edge.startNodeId :
+                    edge.source;
 
-        console.log("渲染节点:", nodes);
-        console.log("渲染边:", edges);
+            const target = edge.endNode ? edge.endNode.id :
+                edge.endNodeId ? edge.endNodeId :
+                    edge.target;
+
+            const edgeObj = {
+                id: edge.id,
+                source: source,
+                target: target,
+                label: edge.type || '关系',
+                properties: edge.properties || {}
+            };
+
+            // 检查source和target是否存在
+            const sourceExists = nodes.some(n => n.id === source);
+            const targetExists = nodes.some(n => n.id === target);
+
+            if (!sourceExists || !targetExists) {
+                console.warn(`边 ${edge.id} 的节点引用不存在:`, {
+                    source, sourceExists, target, targetExists,
+                    edgeData: edge
+                });
+            }
+
+            return edgeObj;
+        });
+
+        // 过滤掉节点引用不存在的边
+        const validEdges = edges.filter(edge => {
+            const sourceExists = nodes.some(n => n.id === edge.source);
+            const targetExists = nodes.some(n => n.id === edge.target);
+            return sourceExists && targetExists;
+        });
+
+        console.log("转换后 - 节点:", nodes.length, "有效边:", validEdges.length);
+        console.log("节点ID示例:", nodes.slice(0, 3).map(n => n.id));
+        console.log("边示例:", validEdges.slice(0, 3));
 
         this.graph.data({
             nodes,
-            edges
+            edges: validEdges
         });
 
         this.graph.render();
         this.graph.fitView();
 
         this.bindGraphEvents();
+
+        try {
+            this.graph.data({
+                nodes,
+                edges: validEdges
+            });
+
+            this.graph.render();
+            this.graph.fitView();
+
+            // 检查渲染结果
+            const renderedNodes = this.graph.getNodes();
+            const renderedEdges = this.graph.getEdges();
+
+            console.log(`图谱渲染结果 - 节点: ${renderedNodes.length}, 边: ${renderedEdges.length}`);
+
+            if (renderedEdges.length === 0 && validEdges.length > 0) {
+                console.warn("边数据存在但未被渲染，检查G6配置");
+                // 强制重新设置边样式
+                this.graph.getEdges().forEach(edge => {
+                    this.graph.updateItem(edge, {
+                        style: {
+                            stroke: '#ff0000', // 红色，便于调试
+                            lineWidth: 2
+                        }
+                    });
+                });
+            }
+
+            this.bindGraphEvents();
+        } catch (error) {
+            console.error("图谱渲染错误:", error);
+        }
     }
 
     // …………………

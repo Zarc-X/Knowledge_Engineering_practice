@@ -65,26 +65,21 @@ class EdgeService {
         try {
             console.log(`边服务: 根据ID获取关系, ID: ${id}`);
 
-            // 使用与更新和删除相同的查询逻辑
-            let query = `
+            // 改进查询，确保返回统一的ID格式
+            const query = `
         MATCH (start)-[r]->(end)
-        WHERE r.id = $id OR ID(r) = $neo4jId
+        WHERE r.id = $id
         RETURN 
             r.id as id,
             type(r) as type,
             properties(r) as properties,
-            start.id as startNodeId,
-            end.id as endNodeId,
+            COALESCE(start.id, toString(ID(start))) as startNodeId,
+            COALESCE(end.id, toString(ID(end))) as endNodeId,
             labels(start) as startLabels,
             labels(end) as endLabels
         `;
 
-            const params = {
-                id: id,
-                neo4jId: int(parseInt(id)) // 同时尝试作为Neo4j内部ID
-            };
-
-            console.log('获取关系详情参数:', params);
+            const params = { id: String(id) };
 
             const result = await neo4j.read(query, params);
 
@@ -95,16 +90,16 @@ class EdgeService {
 
             const record = result.records[0];
             return {
-                id: record.get('id'),
+                id: String(record.get('id')),
                 type: record.get('type'),
-                properties: record.get('properties'),
+                properties: record.get('properties') || {},
                 startNode: {
-                    id: record.get('startNodeId'),
-                    labels: record.get('startLabels')
+                    id: String(record.get('startNodeId')),
+                    labels: record.get('startLabels') || []
                 },
                 endNode: {
-                    id: record.get('endNodeId'),
-                    labels: record.get('endLabels')
+                    id: String(record.get('endNodeId')),
+                    labels: record.get('endLabels') || []
                 }
             };
         } catch (error) {
@@ -331,20 +326,39 @@ class EdgeService {
      * @param {Object} endNode - 目标节点
      * @returns {Object} 格式化后的关系
      */
+    /**
+     * 格式化关系数据，确保节点ID格式统一
+     */
     formatEdge(relationship, startNode, endNode) {
+        // 统一的ID提取逻辑
+        const getNodeId = (node) => {
+            if (node.properties && node.properties.id) {
+                return String(node.properties.id); // 优先使用自定义ID
+            }
+            return node.identity.toString(); // 回退到Neo4j内部ID
+        };
+
+        const getNodeLabels = (node) => {
+            return node.labels || [];
+        };
+
+        const getNodeProperties = (node) => {
+            return node.properties || {};
+        };
+
         return {
-            id: relationship.properties.id || relationship.identity.toString(),
+            id: relationship.properties?.id || relationship.identity.toString(),
             type: relationship.type,
-            properties: relationship.properties,
+            properties: relationship.properties || {},
             startNode: {
-                id: startNode.properties.id || startNode.identity.toString(),
-                labels: startNode.labels,
-                properties: startNode.properties
+                id: getNodeId(startNode),
+                labels: getNodeLabels(startNode),
+                properties: getNodeProperties(startNode)
             },
             endNode: {
-                id: endNode.properties.id || endNode.identity.toString(),
-                labels: endNode.labels,
-                properties: endNode.properties
+                id: getNodeId(endNode),
+                labels: getNodeLabels(endNode),
+                properties: getNodeProperties(endNode)
             },
             neo4jId: relationship.identity.toString()
         };
