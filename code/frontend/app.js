@@ -15,11 +15,64 @@ class KnowledgeGraphApp {
 
         this.graphRenderer.setAppInstance(this);
 
+        // 确保缓存对象正确初始化
+        this.nodeCache = new Map();     // 节点缓存
+        this.edgeCache = new Map();     // 关系缓存
+        this.cacheTimeout = 30000;      // 缓存30秒
+
+        // 确保缓存方法存在
+        // this.preloadCaches = this.preloadCaches.bind(this);
+
         this.init();
         console.log("KnowledgeGraphApp 初始化完成");
+    }
 
-        this.edgeCache = new Map(); // 添加关系缓存
-        this.cacheTimeout = 30000; // 缓存30秒
+    // 预加载缓存 - 添加安全检查
+    preloadCaches() {
+        try {
+            // 确保缓存对象存在
+            if (!this.nodeCache) {
+                console.warn('nodeCache 未初始化，正在重新初始化');
+                this.nodeCache = new Map();
+            }
+            if (!this.edgeCache) {
+                console.warn('edgeCache 未初始化，正在重新初始化');
+                this.edgeCache = new Map();
+            }
+
+            // 清空旧缓存
+            if (this.nodeCache.clear) {
+                this.nodeCache.clear();
+            }
+            if (this.edgeCache.clear) {
+                this.edgeCache.clear();
+            }
+
+            // 预缓存节点数据
+            this.currentData.nodes.forEach(node => {
+                if (node && node.id) {
+                    this.nodeCache.set(node.id, {
+                        data: node,
+                        timestamp: Date.now()
+                    });
+                }
+            });
+
+            // 预缓存边数据
+            this.currentData.edges.forEach(edge => {
+                if (edge && edge.id) {
+                    this.edgeCache.set(edge.id, {
+                        data: edge,
+                        timestamp: Date.now()
+                    });
+                }
+            });
+
+            console.log(`预缓存完成: ${this.nodeCache.size} 个节点, ${this.edgeCache.size} 条边`);
+        } catch (error) {
+            console.error('预加载缓存失败:', error);
+            // 即使缓存失败也不应该阻止应用运行
+        }
     }
 
     init() {
@@ -187,8 +240,12 @@ class KnowledgeGraphApp {
             this.currentData.nodes = nodesResponse.data || [];
             this.currentData.edges = edgesResponse.data || [];
 
-            // 预加载缓存
-            this.preloadCaches();
+            // 预加载缓存（添加错误处理）
+            try {
+                this.preloadCaches();
+            } catch (cacheError) {
+                console.warn('缓存预加载失败，但不影响主要功能:', cacheError);
+            }
 
             this.renderSidebarLists();
             this.graphRenderer.render(this.currentData);
