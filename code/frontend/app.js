@@ -709,20 +709,35 @@ class KnowledgeGraphApp {
             }
 
             const response = await this.api.deleteEdge(edgeId);
+            console.log("删除关系API响应:", response);
 
-            if (response && response.success) {
+            if (response && (response.success === true || response.success === 'unknown')) {
                 // 清理缓存
                 this.edgeCache.delete(edgeId);
 
                 // 从当前数据中移除已删除的关系
                 this.currentData.edges = this.currentData.edges.filter(edge => edge.id !== edgeId);
 
-                this.showSuccessMessage('关系删除成功！');
+                if (response.success === 'unknown') {
+                    this.showMessage('删除请求已发送，但由于超时请刷新页面确认删除状态', 'warning');
+                } else {
+                    this.showSuccessMessage('关系删除成功！');
+                }
+
                 this.hideModal();
 
                 // 刷新UI但不重新加载所有数据
                 this.renderSidebarLists();
                 this.graphRenderer.render(this.currentData);
+
+                // 如果是超时情况，建议用户刷新数据
+                if (response.success === 'unknown') {
+                    setTimeout(() => {
+                        if (confirm('由于删除操作超时，建议刷新页面确认数据状态。是否立即刷新？')) {
+                            this.loadData();
+                        }
+                    }, 2000);
+                }
             } else {
                 throw new Error(response?.message || '删除操作失败');
             }
@@ -988,7 +1003,8 @@ class KnowledgeGraphApp {
             let result;
             if (existingNode) {
                 console.log("更新节点:", existingNode.id, properties);
-                result = await this.api.updateNode(existingNode.id, properties);
+                // 修改这里：将 properties 包装在对象中
+                result = await this.api.updateNode(existingNode.id, { properties });
             } else {
                 console.log("创建节点:", properties, labels);
                 result = await this.api.createNode({ properties, labels });
@@ -1062,7 +1078,8 @@ class KnowledgeGraphApp {
             let result;
             if (existingEdge) {
                 console.log("更新关系:", existingEdge.id, properties);
-                result = await this.api.updateEdge(existingEdge.id, properties);
+                // 修改这里：将 properties 包装在对象中
+                result = await this.api.updateEdge(existingEdge.id, { properties });
             } else {
                 console.log("创建关系:", startNodeId, endNodeId, type, properties);
                 result = await this.api.createEdge({ startNodeId, endNodeId, type, properties });

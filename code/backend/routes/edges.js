@@ -171,6 +171,8 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;
+        console.log(`删除关系路由: ID=${id}, 类型=${typeof id}`);
+
         const deleted = await edgeService.deleteEdge(id);
 
         if (!deleted) {

@@ -65,10 +65,10 @@ class EdgeService {
         try {
             console.log(`边服务: 根据ID获取关系, ID: ${id}`);
 
-            // 只查询必要的关系信息，不返回完整节点数据
+            // 使用与更新和删除相同的查询逻辑
             let query = `
         MATCH (start)-[r]->(end)
-        WHERE r.id = $id
+        WHERE r.id = $id OR ID(r) = $neo4jId
         RETURN 
             r.id as id,
             type(r) as type,
@@ -79,7 +79,12 @@ class EdgeService {
             labels(end) as endLabels
         `;
 
-            const params = { id };
+            const params = {
+                id: id,
+                neo4jId: int(parseInt(id)) // 同时尝试作为Neo4j内部ID
+            };
+
+            console.log('获取关系详情参数:', params);
 
             const result = await neo4j.read(query, params);
 
@@ -194,13 +199,24 @@ class EdgeService {
      */
     async updateEdge(id, properties) {
         try {
+            console.log(`更新关系服务: ID=${id}, 类型=${typeof id}`);
+
+            // 使用与deleteEdge相同的查询逻辑，同时支持字符串ID和Neo4j内部ID
             const query = `
-        MATCH ()-[r {id: $id}]->()
+        MATCH ()-[r]->()
+        WHERE r.id = $id OR ID(r) = $neo4jId
         SET r += $properties
         RETURN r, startNode(r) as start, endNode(r) as end
       `;
 
-            const params = { id, properties };
+            const params = {
+                id: id,
+                neo4jId: int(parseInt(id)), // 同时尝试作为Neo4j内部ID
+                properties: properties
+            };
+
+            console.log('更新关系参数:', params);
+
             const result = await neo4j.write(query, params);
 
             if (result.records.length === 0) {
@@ -234,7 +250,6 @@ class EdgeService {
         MATCH ()-[r]->()
         WHERE r.id = $id OR ID(r) = $neo4jId
         DELETE r
-        RETURN r
         `;
 
             const params = {

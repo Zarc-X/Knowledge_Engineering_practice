@@ -46,7 +46,7 @@ class ApiService {
 
         // 根据操作类型设置不同的超时时间
         const isDeleteOperation = options.method === 'DELETE';
-        const timeout = isDeleteOperation ? 30000 : 15000; // 删除操作30秒，其他15秒
+        const timeout = 30000;
 
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeout);
